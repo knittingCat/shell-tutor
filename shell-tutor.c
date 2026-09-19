@@ -25,6 +25,14 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#include <poll.h>
+#include <sys/ioctl.h>
+#include <termios.h>
+#ifdef __APPLE__
+#include <util.h>
+#else
+#include <pty.h>
+#endif
 
 #define SHELL "/bin/zsh"
 #define COMMAND_TIMEOUT_SEC 15
@@ -541,15 +549,29 @@ static char work_dir[PATH_MAX];       /* scratch_root/work: where commands run *
 static char out_file[PATH_MAX];       /* scratch_root/out: captured output */
 static char diag_file[PATH_MAX];      /* scratch_root/diag: what a lesson's diagnosis printed */
 
+static void become_shell(const char *script, const char *dir, const char *cmd_text) {
+    if (chdir(dir) != 0) _exit(126);
+    setenv("OUT", out_file, 1);
+    setenv("CMD", cmd_text ? cmd_text : "", 1);
+    signal(SIGINT, SIG_DFL);   /* the tutor ignores Ctrl-C; the command must not */
+    alarm(COMMAND_TIMEOUT_SEC);
+    execl(SHELL, "zsh", "-f", "-c", script, (char *)NULL);
+    _exit(127);
+}
+
+static int exit_code(int status) {
+    return WIFSIGNALED(status) ? -1 : WEXITSTATUS(status);
+}
+
 /*
- * Runs `script` with zsh in `dir`. Output goes to `capture` (or is discarded
- * when NULL). Returns the exit status, or -1 if it had to be killed.
+ * Runs `script` with zsh in `dir`, output captured to `capture` (or discarded
+ * when NULL). Used for setup, checks and diagnoses. Returns the exit status,
+ * or -1 if it had to be killed.
  */
 static int run_shell(const char *script, const char *dir, const char *capture, const char *cmd_text) {
     pid_t pid = fork();
     if (pid < 0) die("fork");
     if (pid == 0) {
-        if (chdir(dir) != 0) _exit(126);
         int fd = open(capture ? capture : "/dev/null", O_WRONLY | O_CREAT | O_TRUNC, 0600);
         if (fd < 0) _exit(126);
         dup2(fd, STDOUT_FILENO);
@@ -557,17 +579,53 @@ static int run_shell(const char *script, const char *dir, const char *capture, c
         close(fd);
         int in = open("/dev/null", O_RDONLY);
         if (in >= 0) { dup2(in, STDIN_FILENO); close(in); }
-        setenv("OUT", out_file, 1);
-        setenv("CMD", cmd_text ? cmd_text : "", 1);
-        signal(SIGINT, SIG_DFL);   /* the tutor ignores Ctrl-C; the command must not */
-        alarm(COMMAND_TIMEOUT_SEC);
-        execl(SHELL, "zsh", "-f", "-c", script, (char *)NULL);
-        _exit(127);
+        become_shell(script, dir, cmd_text);
     }
     int status = 0;
     while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {}
-    if (WIFSIGNALED(status)) return -1;
-    return WEXITSTATUS(status);
+    return exit_code(status);
+}
+
+/*
+ * Runs the user's command inside a pseudo-terminal the width of the real one,
+ * so programs behave as they do in a terminal window: ls prints in columns,
+ * for instance. Everything it prints is copied to `capture` with the
+ * terminal's \r\n turned back into \n.
+ */
+static int run_in_terminal(const char *script, const char *dir, const char *capture, const char *cmd_text) {
+    struct winsize ws = { 24, 80, 0, 0 };
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
+    if (ws.ws_col < 20) ws.ws_col = 80;
+    int master;
+    pid_t pid = forkpty(&master, NULL, NULL, &ws);
+    if (pid < 0) return run_shell(script, dir, capture, cmd_text);
+    if (pid == 0) become_shell(script, dir, cmd_text);
+
+    /* Nothing will type into this terminal: hand any command that reads its
+       input an immediate end-of-file, as /dev/null would. */
+    struct termios t;
+    if (tcgetattr(master, &t) == 0) { t.c_lflag &= ~ECHO; tcsetattr(master, TCSANOW, &t); }
+    write(master, "\004", 1);
+
+    FILE *out = fopen(capture, "w");
+    int status = 0, exited = 0;
+    char buf[4096];
+    for (;;) {
+        struct pollfd pfd = { master, POLLIN, 0 };
+        int ready = poll(&pfd, 1, 200);
+        if (ready > 0) {
+            ssize_t n = read(master, buf, sizeof buf);
+            if (n <= 0) break;               /* EIO once the last process on the terminal is gone */
+            if (out) for (ssize_t k = 0; k < n; k++) if (buf[k] != '\r') fputc(buf[k], out);
+            continue;
+        }
+        if (!exited && waitpid(pid, &status, WNOHANG) == pid) exited = 1;
+        if (exited) break;                   /* zsh is gone (perhaps killed by the alarm); don't hang on orphans */
+    }
+    if (out) fclose(out);
+    close(master);
+    if (!exited) while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {}
+    return exit_code(status);
 }
 
 static void reset_work_dir(void) {
@@ -606,14 +664,14 @@ static void show_output(int status) {
     int lines = 0;
     while (fgets(line, sizeof line, f)) {
         if (++lines > MAX_OUTPUT_LINES) {
-            printf("%s  ... (output cut after %d lines)%s\n", DIM, MAX_OUTPUT_LINES, RESET);
+            printf("%s... (output cut after %d lines)%s\n", DIM, MAX_OUTPUT_LINES, RESET);
             break;
         }
-        printf("%s  %s%s%s", DIM, line, line[strlen(line) - 1] == '\n' ? "" : "\n", RESET);
+        printf("%s%s%s%s", DIM, line, line[strlen(line) - 1] == '\n' ? "" : "\n", RESET);
     }
     fclose(f);
-    if (status == -1) printf("%s  (stopped after %d seconds)%s\n", RED, COMMAND_TIMEOUT_SEC, RESET);
-    else if (status != 0) printf("%s  (exit status %d)%s\n", DIM, status, RESET);
+    if (status == -1) printf("%s(stopped after %d seconds)%s\n", RED, COMMAND_TIMEOUT_SEC, RESET);
+    else if (status != 0) printf("%s(exit status %d)%s\n", DIM, status, RESET);
 }
 
 /* ---------- progress ---------- */
@@ -759,7 +817,7 @@ static int run_lesson(int i, int review) {
             reset_work_dir();
             continue;
         }
-        int status = run_shell(input, work_dir, out_file, input);
+        int status = run_in_terminal(input, work_dir, out_file, input);
         show_output(status);
         if (run_shell(l->check, work_dir, NULL, input) == 0) {
             if (saw_answer) {
