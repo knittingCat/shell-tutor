@@ -1,0 +1,6 @@
+<tlib version="1">
+  <package name="shell-tutor" version="1.0.0">
+    <commands>
+      <command name="shell-tutor" source="shell-tutor.c"/>
+    </commands>
+  </tlib>
