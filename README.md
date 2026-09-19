@@ -36,6 +36,8 @@ At the prompt, besides typing a command (or a letter in a quiz):
 | `goto N` | jump to lesson N |
 | `quit` | leave; progress is saved in `~/.shell-tutor/progress` |
 
+At the end of each section, three lessons from earlier sections come back as a quick review — task only, no explanation. Miss one twice (or `idk` it) and it goes back into the pool to be taught again.
+
 Each command you type runs in a fresh `zsh`, so `cd` doesn't carry over to the next line — lessons that need it ask you to combine commands with `;`. A command that runs longer than 15 seconds is stopped.
 
 ## Lessons

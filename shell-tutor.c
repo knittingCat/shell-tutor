@@ -23,11 +23,14 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 #define SHELL "/bin/zsh"
 #define COMMAND_TIMEOUT_SEC 15
 #define MAX_OUTPUT_LINES 40
+#define REVIEW_SIZE 3         /* earlier lessons re-asked at the end of each section */
+#define REVIEW_TRIES 2
 
 /* ---------- lessons ---------- */
 
@@ -469,8 +472,12 @@ static void reset_progress(void) {
 
 /* ---------- lessons ---------- */
 
-static void print_header(int i) {
+static void print_header(int i, int review) {
     const Lesson *l = &LESSONS[i];
+    if (review) {
+        printf("\n%s%sReview  %s — %s%s\n\n", BOLD, CYAN, l->section, l->title, RESET);
+        return;
+    }
     printf("\n%s%s%d/%d  %s — %s%s\n\n", BOLD, CYAN, i + 1, LESSON_COUNT, l->section, l->title, RESET);
     printf("%s\n\n", l->explain);
 }
@@ -528,14 +535,21 @@ static int meta_command(const char *input, const Lesson *l, int i, int *result) 
     return 0;
 }
 
-static int run_lesson(int i) {
+/* A failed review sends the lesson back into the pool so it is taught again. */
+static void forget(int i) {
+    done[i] = 0;
+    save_progress();
+}
+
+static int run_lesson(int i, int review) {
     const Lesson *l = &LESSONS[i];
-    print_header(i);
+    print_header(i, review);
     reset_work_dir();
     print_task(l);
     print_prompt_help(RUN);
     char buf[2048];
     int saw_answer = 0;   /* a pass after seeing the answer doesn't count; the lesson returns later */
+    int tries = 0;
     for (;;) {
         char *input = read_line("$ ", buf, sizeof buf);
         if (!input) return QUIT;
@@ -546,6 +560,7 @@ static int run_lesson(int i) {
         if (wants_answer(input)) {
             saw_answer = 1;
             printf("%sOne way:%s  %s\n", GREEN, RESET, l->answer);
+            if (review) { printf("Back into the lessons it goes.\n"); forget(i); return NEXT; }
             printf("Type it yourself to move on (the scratch files are reset), or skip. Either way this one comes around again later.\n");
             reset_work_dir();
             continue;
@@ -562,18 +577,24 @@ static int run_lesson(int i) {
             save_progress();
             return NEXT;
         }
+        if (review && ++tries >= REVIEW_TRIES) {
+            printf("%sNot quite.%s One way:  %s\nBack into the lessons it goes.\n", RED, RESET, l->answer);
+            forget(i);
+            return NEXT;
+        }
         printf("%sNot quite.%s Try again, or type hint.\n", RED, RESET);
         reset_work_dir();
     }
 }
 
-static int quiz_lesson(int i) {
+static int quiz_lesson(int i, int review) {
     const Lesson *l = &LESSONS[i];
-    print_header(i);
+    print_header(i, review);
     print_task(l);
     printf("%s\n", l->options);
     print_prompt_help(QUIZ);
     char buf[256];
+    int tries = 0;
     for (;;) {
         char *input = read_line("> ", buf, sizeof buf);
         if (!input) return QUIT;
@@ -584,6 +605,7 @@ static int quiz_lesson(int i) {
         if (wants_answer(input)) {
             printf("%sAnswer: %s.%s %s\n", GREEN, l->check, RESET, l->answer);
             printf("This one comes around again later.\n");
+            if (review) forget(i);
             return NEXT;
         }
         if (strlen(input) == 1 && tolower((unsigned char)input[0]) == l->check[0]) {
@@ -593,11 +615,40 @@ static int quiz_lesson(int i) {
             return NEXT;
         }
         if (strlen(input) == 1 && input[0] >= 'a' && input[0] <= 'd') {
+            if (review && ++tries >= REVIEW_TRIES) {
+                printf("%sNot quite.%s Answer: %s. %s\nBack into the lessons it goes.\n", RED, RESET, l->check, l->answer);
+                forget(i);
+                return NEXT;
+            }
             printf("%sNot quite.%s Try again, or type hint.\n", RED, RESET);
             continue;
         }
         printf("Answer with a letter (a-d).\n");
     }
+}
+
+/*
+ * At the end of a section, re-ask a few lessons finished earlier, chosen at
+ * random from sections before this one. No explanation is shown; two misses
+ * (or idk) un-finish the lesson so it is taught again later.
+ */
+static int review_pass(int section_end) {
+    int pool[LESSON_COUNT], n = 0;
+    const char *section = LESSONS[section_end].section;
+    for (int k = 0; k < section_end; k++)
+        if (done[k] && strcmp(LESSONS[k].section, section) != 0) pool[n++] = k;
+    if (n == 0) return NEXT;
+    int count = n < REVIEW_SIZE ? n : REVIEW_SIZE;
+    printf("\n%s%sQuick review%s — %d from earlier, no explanations this time.\n", BOLD, YELLOW, RESET, count);
+    for (int r = 0; r < count; r++) {
+        int pick = r + rand() % (n - r);     /* partial shuffle */
+        int tmp = pool[r]; pool[r] = pool[pick]; pool[pick] = tmp;
+        int k = pool[r];
+        int result = LESSONS[k].kind == RUN ? run_lesson(k, 1) : quiz_lesson(k, 1);
+        if (result == QUIT) return QUIT;
+        if (result == JUMP) return JUMP;
+    }
+    return NEXT;
 }
 
 /* ---------- main ---------- */
@@ -634,6 +685,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    srand((unsigned)time(NULL) ^ (unsigned)getpid());
     setup_scratch();
     atexit(remove_scratch);
     signal(SIGINT, SIG_IGN);   /* Ctrl-C at the tutor prompt shouldn't kill the tutor; it still stops a running command */
@@ -652,10 +704,16 @@ int main(int argc, char **argv) {
 
     int i = start, quit = 0;
     while (i < LESSON_COUNT) {
-        int result = LESSONS[i].kind == RUN ? run_lesson(i) : quiz_lesson(i);
+        int result = LESSONS[i].kind == RUN ? run_lesson(i, 0) : quiz_lesson(i, 0);
         if (result == QUIT) { quit = 1; break; }
         if (result == JUMP) { i = jump_to; continue; }
+        int section_over = i + 1 == LESSON_COUNT || strcmp(LESSONS[i].section, LESSONS[i + 1].section) != 0;
         i++;
+        if (section_over && done[i - 1]) {
+            result = review_pass(i - 1);
+            if (result == QUIT) { quit = 1; break; }
+            if (result == JUMP) { i = jump_to; continue; }
+        }
     }
 
     /* Lessons that were skipped (or answered with idk) come around again
@@ -670,7 +728,7 @@ int main(int argc, char **argv) {
         printf("\n%sGoing back to the %d lesson%s you skipped or needed the answer for.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
         for (int k = 0; k < LESSON_COUNT && !quit; k++) {
             if (done[k]) continue;
-            int result = LESSONS[k].kind == RUN ? run_lesson(k) : quiz_lesson(k);
+            int result = LESSONS[k].kind == RUN ? run_lesson(k, 0) : quiz_lesson(k, 0);
             if (result == QUIT) quit = 1;
             if (result == JUMP) k = jump_to - 1;
             if (done[k]) done_this_pass++;
