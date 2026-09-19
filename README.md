@@ -30,7 +30,7 @@ At the prompt, besides typing a command (or a letter in a quiz):
 | | |
 |---|---|
 | `hint` | a nudge |
-| `idk` | "I don't know" — shows one command that would do it (the scratch files are reset so you can type it yourself); in a quiz, shows the answer and moves on. `answer` works too |
+| `idk` | "I don't know" — shows one command that would do it (the scratch files are reset so you can type it yourself); in a quiz, shows the answer and moves on. A lesson you needed the answer for isn't marked done: it comes around again later. `answer` works too |
 | `skip` | move on for now — skipped lessons come around again after the last one |
 | `list` | all lessons and which are done |
 | `goto N` | jump to lesson N |

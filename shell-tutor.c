@@ -533,6 +533,7 @@ static int run_lesson(int i) {
     print_task(l);
     print_prompt_help(RUN);
     char buf[2048];
+    int saw_answer = 0;   /* a pass after seeing the answer doesn't count; the lesson returns later */
     for (;;) {
         char *input = read_line("$ ", buf, sizeof buf);
         if (!input) return QUIT;
@@ -541,14 +542,19 @@ static int run_lesson(int i) {
         if (handled == 1) return result;
         if (handled == 2) continue;
         if (wants_answer(input)) {
+            saw_answer = 1;
             printf("%sOne way:%s  %s\n", GREEN, RESET, l->answer);
-            printf("Type it yourself to move on (the scratch files are reset), or skip.\n");
+            printf("Type it yourself to move on (the scratch files are reset), or skip. Either way this one comes around again later.\n");
             reset_work_dir();
             continue;
         }
         int status = run_shell(input, work_dir, out_file, input);
         show_output(status);
         if (run_shell(l->check, work_dir, NULL, input) == 0) {
+            if (saw_answer) {
+                printf("%s✓ That's it.%s You'll get this one again later, without the answer.\n", GREEN, RESET);
+                return NEXT;
+            }
             printf("%s✓ Correct.%s\n", GREEN, RESET);
             done[i] = 1;
             save_progress();
@@ -575,6 +581,7 @@ static int quiz_lesson(int i) {
         if (handled == 2) continue;
         if (wants_answer(input)) {
             printf("%sAnswer: %s.%s %s\n", GREEN, l->check, RESET, l->answer);
+            printf("This one comes around again later.\n");
             return NEXT;
         }
         if (strlen(input) == 1 && tolower((unsigned char)input[0]) == l->check[0]) {
@@ -630,6 +637,16 @@ int main(int argc, char **argv) {
     signal(SIGINT, SIG_IGN);   /* Ctrl-C at the tutor prompt shouldn't kill the tutor; it still stops a running command */
 
     printf("%s%sshell-tutor%s — commands run in a scratch folder (%s), never in your files.\n", BOLD, CYAN, RESET, work_dir);
+    int any_done = 0;
+    for (int k = 0; k < LESSON_COUNT; k++) any_done += done[k];
+    if (!any_done) {
+        printf("\nNew here? The shell is the program behind this window: you type a command,\n"
+               "press Enter, and it runs it and shows the result. A command is a program's name,\n"
+               "sometimes followed by options (like -l) and the files it should work on.\n"
+               "Each lesson explains one thing, then asks you to try it. If you have no idea,\n"
+               "type   idk   to see an answer, then type that yourself to see what it does.\n"
+               "Nothing you try here can damage anything.\n");
+    }
 
     int i = start, quit = 0;
     while (i < LESSON_COUNT) {
@@ -648,7 +665,7 @@ int main(int argc, char **argv) {
             printf("\n%sThat's all %d lessons. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
             break;
         }
-        printf("\n%sGoing back to the %d lesson%s you skipped.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
+        printf("\n%sGoing back to the %d lesson%s you skipped or needed the answer for.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
         for (int k = 0; k < LESSON_COUNT && !quit; k++) {
             if (done[k]) continue;
             int result = LESSONS[k].kind == RUN ? run_lesson(k) : quiz_lesson(k);
