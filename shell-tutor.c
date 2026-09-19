@@ -67,20 +67,26 @@ static const Lesson LESSONS[] = {
       "pwd", NULL },
 
     { "ls", RUN, "Getting around", "What's here?",
-      "  ls   lists the files and folders in the current directory. Given a folder\n"
-      "name (ls docs) it lists that folder instead.",
+      "There's a two-letter command, short for \"list\", that shows the files and\n"
+      "folders in the current directory. Give it a folder name afterwards and it\n"
+      "lists that folder instead.",
       "See what is in the current directory. (One of the things in it is a folder called docs.)",
       "grep -q 'fruits.txt' \"$OUT\" && grep -q 'docs' \"$OUT\"",
-      "Two letters.",
+      "l, then s.",
       "ls", NULL },
 
     { "ls-la", RUN, "Getting around", "Hidden files and details",
-      "Files whose names start with a dot are hidden from a plain ls.\n"
-      "  ls -a   shows them too      ls -l   shows details (size, date, permissions)\n"
-      "Options can be combined into one word after the dash, in any order.",
-      "List everything here, including the hidden file, with details.",
+      "Most commands accept options: extra words that start with a dash and change\n"
+      "what the command does. ls has two you'll use constantly:\n"
+      "  ls -a   also shows hidden files: any file whose name starts with a dot,\n"
+      "          like .secret, is normally left out of the list\n"
+      "  ls -l   shows a long listing: one file per line, with its permissions,\n"
+      "          owner, size and date\n"
+      "Several one-letter options can share a single dash:  ls -l -t  and  ls -lt\n"
+      "mean the same thing (-t sorts by date).",
+      "List everything here, hidden files included, as a long listing.",
       "grep -q '\\.secret' \"$OUT\" && grep -qE '^[-d][rwx-]{9}' \"$OUT\"",
-      "Combine -l and -a.",
+      "You need both -l and -a; they can share one dash.",
       "ls -la", NULL },
 
     { "cd", RUN, "Getting around", "Moving into a folder",
@@ -300,6 +306,140 @@ static const Lesson LESSONS[] = {
       "kill %1 ends it. fg %1 would also make it go away eventually, but by resuming\n"
       "it in the foreground and waiting for it to finish.",
       "a) kill %1\nb) fg %1\nc) exit\nd) bg %1" },
+
+    /* ---- second tier ---- */
+
+    { "glob", RUN, "Wildcards", "Match many files at once",
+      "The shell expands * before the command runs: *.txt becomes every name here\n"
+      "ending in .txt, so   cat *.txt   prints all of them. ? matches one character.\n"
+      "That's why the find lesson quoted its pattern: to stop this expansion.",
+      "Print how many lines all the .txt files here have together (wc -l of all of them at once).\n"
+      "wc prints a total line when given several files.",
+      "[[ \"$CMD\" == *'*'* ]] && grep -q 'total' \"$OUT\"",
+      "wc -l with a wildcard.",
+      "wc -l *.txt", NULL },
+
+    { "touch", RUN, "Wildcards", "Empty files and brace expansion",
+      "  touch NAME   creates an empty file (or just updates the date of an existing one).\n"
+      "  {a,b,c}   expands to each option in turn:  echo file{1,2}.txt  prints\n"
+      "file1.txt file2.txt. It works anywhere in a command.",
+      "Create three empty files at once: draft1.txt, draft2.txt and draft3.txt.",
+      "[ -f draft1.txt ] && [ -f draft2.txt ] && [ -f draft3.txt ] && [[ \"$CMD\" == *'{'* ]]",
+      "touch draft{1,2,3}.txt",
+      "touch draft{1,2,3}.txt", NULL },
+
+    { "stderr", RUN, "Errors and status", "Errors have their own stream",
+      "Commands print normal output on stream 1 (stdout) and errors on stream 2\n"
+      "(stderr). > only redirects stream 1; that is why an error message still shows\n"
+      "on screen when you redirect. To send errors somewhere:  2> FILE\n"
+      "  2>/dev/null   throws them away.  /dev/null is a file that discards everything.",
+      "Run   cat nope.txt fruits.txt   so the error about nope.txt goes into a file called errors.txt\n"
+      "while the fruit list still prints.",
+      "grep -q '^banana$' \"$OUT\" && grep -qi 'nope.txt' errors.txt && ! grep -qi 'no such file' \"$OUT\"",
+      "... 2> errors.txt",
+      "cat nope.txt fruits.txt 2> errors.txt", NULL },
+
+    { "status", RUN, "Errors and status", "Exit status",
+      "Every command ends with a number: 0 means success, anything else means some\n"
+      "kind of failure. The shell keeps the last one in   $?   and && and || read it.\n"
+      "  ls nope ; echo $?   prints ls's error, then a non-zero number.",
+      "Run   grep zzz fruits.txt   and then print its exit status on the next line.",
+      "[ \"$(tail -n 1 \"$OUT\")\" = \"1\" ] && [[ \"$CMD\" == *'$?'* ]]",
+      "grep zzz fruits.txt ; echo $?",
+      "grep zzz fruits.txt; echo $?", NULL },
+
+    { "cut", RUN, "Text tools", "Pick columns",
+      "people.csv has lines like   ada,lovelace,1815   — fields separated by commas.\n"
+      "  cut -d , -f 2 FILE   prints field 2 of each line, using , as the delimiter.\n"
+      "  -f 1,3   picks several fields.",
+      "Print just the birth years (the third field) from people.csv.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf '1815\\n1912\\n1906')\" ]",
+      "cut with -d , and -f 3",
+      "cut -d , -f 3 people.csv", NULL },
+
+    { "tr", RUN, "Text tools", "Change characters",
+      "  tr A B   replaces every A with B in whatever is piped into it. It takes\n"
+      "ranges too:  tr a-z A-Z   upper-cases everything. tr reads only from a pipe\n"
+      "or <, never from a file name.",
+      "Print fruits.txt in upper case.",
+      "grep -q '^BANANA$' \"$OUT\" && grep -q '^CHERRY$' \"$OUT\"",
+      "cat fruits.txt | tr a-z A-Z",
+      "cat fruits.txt | tr a-z A-Z", NULL },
+
+    { "sort-n", RUN, "Text tools", "Sort numbers as numbers",
+      "  sort   compares text, so 10 comes before 9 (1 is less than 9).\n"
+      "  sort -n   compares numerically.   -r   reverses the order.\n"
+      "  head -n 1   after a sort gives you the smallest or largest.",
+      "Print the single largest number in scores.txt.",
+      "[ \"$(cat \"$OUT\")\" = \"97\" ]",
+      "sort -n, reversed, then head -n 1",
+      "sort -nr scores.txt | head -n 1", NULL },
+
+    { "tee", RUN, "Text tools", "Save and see at once",
+      "  | tee FILE   writes what flows through the pipe into FILE and also passes\n"
+      "it on, so you can save a result and still see it on screen.",
+      "Sort fruits.txt, saving the sorted list to sorted.txt while it also prints on screen.",
+      "grep -q '^apple$' \"$OUT\" && [ \"$(cat sorted.txt 2>/dev/null)\" = \"$(sort fruits.txt)\" ]",
+      "sort fruits.txt | tee sorted.txt",
+      "sort fruits.txt | tee sorted.txt", NULL },
+
+    { "for", RUN, "Loops", "Do something for each file",
+      "  for f in *.txt; do echo \"$f\"; done\n"
+      "runs the part between do and done once per match, with $f set to each name\n"
+      "in turn. Any commands can go in the middle, separated by ;.",
+      "For every .md file under docs (use find to list them), print its name followed by its line count.\n"
+      "Any format is fine as long as each name and its count appear.",
+      "[[ \"$CMD\" == *'for '* ]] && grep -q 'readme.md' \"$OUT\" && grep -q 'setup.md' \"$OUT\" && grep -q '3' \"$OUT\"",
+      "for f in $(find docs -name '*.md'); do wc -l \"$f\"; done",
+      "for f in $(find docs -name '*.md'); do wc -l \"$f\"; done", NULL },
+
+    { "xargs", RUN, "Loops", "Turn output into arguments",
+      "  find ... | xargs COMMAND   runs COMMAND with everything find printed as its\n"
+      "arguments, instead of feeding it as input. So   find . -name '*.md' | xargs wc -l\n"
+      "counts lines in each .md file (and prints a total).",
+      "Delete every .log file anywhere under the current directory in one command using find and xargs.\n"
+      "There are three: old.log, logs/a.log and logs/b.log.",
+      "[[ \"$CMD\" == *xargs* ]] && [ ! -e old.log ] && [ ! -e logs/a.log ] && [ -f fruits.txt ]",
+      "find . -name '*.log' | xargs rm",
+      "find . -name '*.log' | xargs rm", NULL },
+
+    { "ln", RUN, "Links and archives", "Symbolic links",
+      "  ln -s TARGET NAME   makes NAME a symbolic link: a small pointer to TARGET.\n"
+      "Opening NAME opens TARGET.   ls -l   shows links as   NAME -> TARGET.\n"
+      "Deleting the link leaves the target alone.",
+      "Create a link called latest that points to docs/readme.md.",
+      "[ -L latest ] && [ \"$(readlink latest)\" = \"docs/readme.md\" ]",
+      "ln -s docs/readme.md latest",
+      "ln -s docs/readme.md latest", NULL },
+
+    { "tar", RUN, "Links and archives", "Bundle a folder",
+      "  tar -czf NAME.tar.gz FOLDER   packs FOLDER into one compressed file.\n"
+      "  tar -xzf NAME.tar.gz          unpacks it.   -t   instead of -x just lists it.\n"
+      "c=create, x=extract, z=gzip, f=file name follows.",
+      "Pack the docs folder into docs.tar.gz.",
+      "[ -f docs.tar.gz ] && tar -tzf docs.tar.gz | grep -q 'docs/readme.md'",
+      "tar -czf docs.tar.gz docs",
+      "tar -czf docs.tar.gz docs", NULL },
+
+    { "which", RUN, "Finding programs", "Where a command lives",
+      "Commands are files too. The shell finds them by searching the folders listed\n"
+      "in the PATH variable, in order.   which NAME   prints the one it would use.\n"
+      "  echo $PATH   shows the list, separated by colons.",
+      "Print the full path of the ls program.",
+      "grep -q '/ls$' \"$OUT\"",
+      "which ls",
+      "which ls", NULL },
+
+    { "man", QUIZ, "Finding programs", "Reading the manual",
+      "  man COMMAND   opens the manual page for a command: every option, explained.\n"
+      "It shows one screen at a time: space for the next page, / to search, q to quit.\n"
+      "Most commands also accept   --help   for a short summary.",
+      "You're inside   man ls   and want to leave it. What do you press?",
+      "c",
+      "The pager has a one-letter key for quitting.",
+      "q quits the pager. Ctrl-C usually works too, but q is the intended way; Ctrl-Z\n"
+      "would only suspend it, leaving a job behind.",
+      "a) Ctrl-Z\nb) Escape\nc) q\nd) exit" },
 };
 
 #define LESSON_COUNT ((int)(sizeof LESSONS / sizeof LESSONS[0]))
@@ -316,7 +456,10 @@ static const char *FIXTURES =
     "mkdir -p docs/guide\n"
     "printf '# Project\\n\\nA small project.\\n' > docs/readme.md\n"
     "printf '# Setup\\n\\nRun the installer, then INSTALL the plugin.\\n' > docs/guide/setup.md\n"
-    "printf 'draft\\n' > docs/draft.txt\n";
+    "printf 'draft\\n' > docs/draft.txt\n"
+    "printf 'ada,lovelace,1815\\nalan,turing,1912\\ngrace,hopper,1906\\n' > people.csv\n"
+    "printf '42\\n7\\n97\\n10\\n9\\n' > scores.txt\n"
+    "mkdir -p logs && printf 'a\\n' > logs/a.log && printf 'b\\n' > logs/b.log\n";
 
 /* ---------- terminal helpers ---------- */
 

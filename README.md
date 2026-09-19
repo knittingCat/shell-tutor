@@ -1,6 +1,6 @@
 # shell-tutor
 
-Learn the Unix shell by doing. `shell-tutor` walks you through 25 short lessons — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
+Learn the Unix shell by doing. `shell-tutor` walks you through 39 short lessons — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
 
 Your commands run in a scratch folder that shell-tutor fills with example files, so nothing you try can touch your own files. A check runs after every command to see whether the task was done. Job-control lessons (Ctrl-Z, `fg`, `bg`, `&`, `kill %1`) can't be exercised inside a scratch shell, so those are short quizzes.
 
@@ -36,7 +36,7 @@ At the prompt, besides typing a command (or a letter in a quiz):
 | `goto N` | jump to lesson N |
 | `quit` | leave; progress is saved in `~/.shell-tutor/progress` |
 
-At the end of each section, three lessons from the two previous sections come back as a quick review — task only, no explanation. Miss one twice (or `idk` it) and it goes back into the pool to be taught again. Once every lesson is done there's a final review of all 25 in random order; running `shell-tutor` again after that repeats the final review.
+At the end of each section, three lessons from the two previous sections come back as a quick review — task only, no explanation. Miss one twice (or `idk` it) and it goes back into the pool to be taught again. Once every lesson is done there's a final review of all 39 in random order; running `shell-tutor` again after that repeats the final review.
 
 Each command you type runs in a fresh `zsh`, so `cd` doesn't carry over to the next line — lessons that need it ask you to combine commands with `;`. A command that runs longer than 15 seconds is stopped.
 
@@ -51,3 +51,9 @@ Each command you type runs in a fresh `zsh`, so `cd` doesn't carry over to the n
 7. Scripts — `chmod +x`, `./`, variables, `$( )`
 8. Combining commands — `;`, `&&`, `||`
 9. Jobs — Ctrl-Z, `fg`, `bg`, `jobs`, `&`, `kill %1`
+10. Wildcards — `*`, `touch`, `{a,b}` brace expansion
+11. Errors and status — `2>`, `/dev/null`, `$?`
+12. Text tools — `cut`, `tr`, `sort -n`, `tee`
+13. Loops — `for`, `xargs`
+14. Links and archives — `ln -s`, `tar`
+15. Finding programs — `which`, `PATH`, `man`
