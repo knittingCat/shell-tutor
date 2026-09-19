@@ -55,16 +55,17 @@ typedef struct {
 static const Lesson LESSONS[] = {
     { "pwd", RUN, "Getting around", "Where am I?",
       "The shell always has a current directory: the folder your commands act on.\n"
-      "  pwd   prints its full path (\"print working directory\").",
-      "Print the current directory.",
-      "grep -qx \"$(pwd)\" \"$OUT\"",
-      "The command is three letters long.",
+      "There's a three-letter command that prints its full path; its name is short\n"
+      "for \"print working directory\".",
+      "Find out which folder you are in.",
+      "grep -qx \"$(pwd)\" \"$OUT\" && [[ \"$CMD\" == *pwd* ]]",
+      "p, then w, then d.",
       "pwd", NULL },
 
     { "ls", RUN, "Getting around", "What's here?",
-      "  ls   lists the files and folders in the current directory.\n"
-      "This scratch directory has a few files in it and a folder called docs.",
-      "List what is in the current directory.",
+      "  ls   lists the files and folders in the current directory. Given a folder\n"
+      "name (ls docs) it lists that folder instead.",
+      "See what is in the current directory. (One of the things in it is a folder called docs.)",
       "grep -q 'fruits.txt' \"$OUT\" && grep -q 'docs' \"$OUT\"",
       "Two letters.",
       "ls", NULL },
@@ -72,19 +73,20 @@ static const Lesson LESSONS[] = {
     { "ls-la", RUN, "Getting around", "Hidden files and details",
       "Files whose names start with a dot are hidden from a plain ls.\n"
       "  ls -a   shows them too      ls -l   shows details (size, date, permissions)\n"
-      "Options can be combined:  ls -la",
+      "Options can be combined into one word after the dash, in any order.",
       "List everything here, including the hidden file, with details.",
       "grep -q '\\.secret' \"$OUT\" && grep -qE '^[-d][rwx-]{9}' \"$OUT\"",
       "Combine -l and -a.",
       "ls -la", NULL },
 
     { "cd", RUN, "Getting around", "Moving into a folder",
-      "  cd docs   changes the current directory to the docs folder inside this one.\n"
-      "  cd ..     goes up one level.     cd   on its own goes to your home directory.\n"
+      "  cd FOLDER   changes the current directory to FOLDER.\n"
+      "  cd ..       goes up one level.     cd   on its own goes to your home directory.\n"
       "Paths without a leading / are relative to where you are now.\n"
-      "Each command you type here runs in a fresh shell, so combine the move with\n"
-      "something that shows where you ended up. A ; runs one command after another.",
-      "Go into docs and print the directory you are then in.",
+      "Each line you type here runs in a fresh shell, so a cd on its own would be\n"
+      "forgotten immediately: put a ; after it and add a second command on the same\n"
+      "line that shows where you ended up.",
+      "Go into the docs folder and show the directory you are then in.",
       "grep -q '/docs$' \"$OUT\"",
       "cd docs ; pwd",
       "cd docs; pwd", NULL },
@@ -142,8 +144,8 @@ static const Lesson LESSONS[] = {
     { "redirect", RUN, "Redirection", "Send output to a file",
       "Every command's output normally goes to the screen. The > sign sends it\n"
       "into a file instead, creating the file or replacing what was in it:\n"
-      "  echo hello > greeting.txt\n"
-      "  echo   just prints its arguments.",
+      "  ls > listing.txt      puts the listing in a file instead of on screen.\n"
+      "  echo   just prints its arguments:  echo good morning",
       "Create a file called greeting.txt containing the single word hello.",
       "[ \"$(cat greeting.txt 2>/dev/null)\" = \"hello\" ]",
       "echo hello > greeting.txt",
@@ -178,8 +180,7 @@ static const Lesson LESSONS[] = {
 
     { "sort-uniq", RUN, "Pipes", "Sort and de-duplicate",
       "  sort   puts lines in order.   uniq   drops repeated lines, but only when\n"
-      "they are next to each other, so sort first:\n"
-      "  sort FILE | uniq\n"
+      "they are next to each other, so on its own it misses repeats that are apart.\n"
       "colors.txt has repeated colors in a random order.",
       "Print each color in colors.txt once, in alphabetical order.",
       "[ \"$(cat \"$OUT\")\" = \"$(printf 'blue\\ngreen\\nred\\nyellow')\" ]",
@@ -206,8 +207,9 @@ static const Lesson LESSONS[] = {
     { "chmod", RUN, "Scripts", "Make a script runnable",
       "hello.sh is a shell script, but it can't be run yet: files need the\n"
       "execute permission first.\n"
-      "  chmod +x FILE   adds it.   ./hello.sh   then runs it (the ./ means\n"
-      "\"the one in this directory\", since the shell only searches PATH otherwise).",
+      "  chmod +x FILE   adds it. A script in the current directory is then run as\n"
+      "  ./NAME   (the ./ means \"the one in this directory\", since the shell only\n"
+      "searches PATH otherwise).",
       "Make hello.sh executable and run it.",
       "[ -x hello.sh ] && grep -q 'Hello from a script' \"$OUT\"",
       "chmod +x hello.sh ; ./hello.sh",
