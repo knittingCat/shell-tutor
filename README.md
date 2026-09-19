@@ -25,12 +25,12 @@ shell-tutor --list   show the lessons and your progress
 shell-tutor --reset  forget your progress
 ```
 
-At the prompt, besides typing a command:
+At the prompt, besides typing a command (or a letter in a quiz):
 
 | | |
 |---|---|
 | `hint` | a nudge |
-| `answer` | one command that would do it (the scratch files are reset so you can type it yourself) |
+| `idk` | "I don't know" — shows one command that would do it (the scratch files are reset so you can type it yourself); in a quiz, shows the answer and moves on. `answer` works too |
 | `skip` | move on without finishing this lesson |
 | `list` | all lessons and which are done |
 | `goto N` | jump to lesson N |

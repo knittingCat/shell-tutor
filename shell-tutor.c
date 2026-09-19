@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -478,9 +479,17 @@ static void print_task(const Lesson *l) {
 
 static void print_prompt_help(int kind) {
     if (kind == RUN)
-        printf("%sType a command, or: hint, answer, skip, list, quit%s\n", DIM, RESET);
+        printf("%sType a command, or: hint, idk (show the answer), skip, list, quit%s\n", DIM, RESET);
     else
-        printf("%sType a letter, or: hint, answer, skip, list, quit%s\n", DIM, RESET);
+        printf("%sType a letter, or: hint, idk (show the answer), skip, list, quit%s\n", DIM, RESET);
+}
+
+/* "I don't know" in its usual spellings, plus the older `answer`. */
+static int wants_answer(const char *input) {
+    static const char *forms[] = { "idk", "i don't know", "i dont know", "dunno", "answer", "show", NULL };
+    for (int k = 0; forms[k]; k++)
+        if (strcasecmp(input, forms[k]) == 0) return 1;
+    return 0;
 }
 
 static void list_lessons(int current) {
@@ -531,7 +540,7 @@ static int run_lesson(int i) {
         int result, handled = meta_command(input, l, i, &result);
         if (handled == 1) return result;
         if (handled == 2) continue;
-        if (strcmp(input, "answer") == 0) {
+        if (wants_answer(input)) {
             printf("%sOne way:%s  %s\n", GREEN, RESET, l->answer);
             printf("Type it yourself to move on (the scratch files are reset), or skip.\n");
             reset_work_dir();
@@ -564,7 +573,7 @@ static int quiz_lesson(int i) {
         int result, handled = meta_command(input, l, i, &result);
         if (handled == 1) return result;
         if (handled == 2) continue;
-        if (strcmp(input, "answer") == 0) {
+        if (wants_answer(input)) {
             printf("%sAnswer: %s.%s %s\n", GREEN, l->check, RESET, l->answer);
             return NEXT;
         }
@@ -592,7 +601,7 @@ static void usage(void) {
          "  shell-tutor --list   show the lessons and your progress\n"
          "  shell-tutor --reset  forget your progress\n"
          "\n"
-         "At the prompt: hint, answer, skip, list, goto N, quit.");
+         "At the prompt: hint, idk (show the answer), skip, list, goto N, quit.");
 }
 
 int main(int argc, char **argv) {
