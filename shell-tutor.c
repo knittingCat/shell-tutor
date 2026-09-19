@@ -631,14 +631,37 @@ int main(int argc, char **argv) {
 
     printf("%s%sshell-tutor%s — commands run in a scratch folder (%s), never in your files.\n", BOLD, CYAN, RESET, work_dir);
 
-    int i = start;
+    int i = start, quit = 0;
     while (i < LESSON_COUNT) {
         int result = LESSONS[i].kind == RUN ? run_lesson(i) : quiz_lesson(i);
-        if (result == QUIT) break;
+        if (result == QUIT) { quit = 1; break; }
         if (result == JUMP) { i = jump_to; continue; }
         i++;
     }
-    if (i >= LESSON_COUNT) printf("\n%sThat's all %d lessons. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
+
+    /* Lessons that were skipped (or answered with idk) come around again
+       until they're done or the user gives up on them a second time. */
+    while (!quit) {
+        int pending = 0, done_this_pass = 0;
+        for (int k = 0; k < LESSON_COUNT; k++) pending += !done[k];
+        if (pending == 0) {
+            printf("\n%sThat's all %d lessons. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
+            break;
+        }
+        printf("\n%sGoing back to the %d lesson%s you skipped.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
+        for (int k = 0; k < LESSON_COUNT && !quit; k++) {
+            if (done[k]) continue;
+            int result = LESSONS[k].kind == RUN ? run_lesson(k) : quiz_lesson(k);
+            if (result == QUIT) quit = 1;
+            if (result == JUMP) k = jump_to - 1;
+            if (done[k]) done_this_pass++;
+        }
+        if (quit) break;
+        if (!done_this_pass) {
+            printf("\n%sLeaving the rest for another time. Run shell-tutor again to pick them up.%s\n", DIM, RESET);
+            break;
+        }
+    }
 
     int finished = 0;
     for (int k = 0; k < LESSON_COUNT; k++) finished += done[k];

@@ -31,7 +31,7 @@ At the prompt, besides typing a command (or a letter in a quiz):
 |---|---|
 | `hint` | a nudge |
 | `idk` | "I don't know" — shows one command that would do it (the scratch files are reset so you can type it yourself); in a quiz, shows the answer and moves on. `answer` works too |
-| `skip` | move on without finishing this lesson |
+| `skip` | move on for now — skipped lessons come around again after the last one |
 | `list` | all lessons and which are done |
 | `goto N` | jump to lesson N |
 | `quit` | leave; progress is saved in `~/.shell-tutor/progress` |
