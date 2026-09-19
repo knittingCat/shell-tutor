@@ -30,6 +30,7 @@
 #define COMMAND_TIMEOUT_SEC 15
 #define MAX_OUTPUT_LINES 40
 #define REVIEW_SIZE 3         /* earlier lessons re-asked at the end of each section */
+#define REVIEW_DEPTH 2        /* ...drawn from at most this many preceding sections */
 #define REVIEW_TRIES 2
 
 /* ---------- lessons ---------- */
@@ -627,19 +628,8 @@ static int quiz_lesson(int i, int review) {
     }
 }
 
-/*
- * At the end of a section, re-ask a few lessons finished earlier, chosen at
- * random from sections before this one. No explanation is shown; two misses
- * (or idk) un-finish the lesson so it is taught again later.
- */
-static int review_pass(int section_end) {
-    int pool[LESSON_COUNT], n = 0;
-    const char *section = LESSONS[section_end].section;
-    for (int k = 0; k < section_end; k++)
-        if (done[k] && strcmp(LESSONS[k].section, section) != 0) pool[n++] = k;
-    if (n == 0) return NEXT;
-    int count = n < REVIEW_SIZE ? n : REVIEW_SIZE;
-    printf("\n%s%sQuick review%s — %d from earlier, no explanations this time.\n", BOLD, YELLOW, RESET, count);
+/* Re-asks the lessons in pool[0..n) in random order, `count` of them at most. */
+static int review_lessons(int *pool, int n, int count) {
     for (int r = 0; r < count; r++) {
         int pick = r + rand() % (n - r);     /* partial shuffle */
         int tmp = pool[r]; pool[r] = pool[pick]; pool[pick] = tmp;
@@ -649,6 +639,42 @@ static int review_pass(int section_end) {
         if (result == JUMP) return JUMP;
     }
     return NEXT;
+}
+
+/*
+ * At the end of a section, re-ask a few finished lessons from the sections
+ * just before it (not from the very beginning every time). No explanation is
+ * shown; two misses (or idk) un-finish the lesson so it is taught again later.
+ */
+static int review_pass(int section_end) {
+    int pool[LESSON_COUNT], n = 0;
+    const char *section = LESSONS[section_end].section;
+    const char *seen[REVIEW_DEPTH + 1];
+    int depth = 0;
+    for (int k = section_end - 1; k >= 0; k--) {
+        const char *sec = LESSONS[k].section;
+        if (strcmp(sec, section) == 0) continue;
+        int known = 0;
+        for (int d = 0; d < depth; d++) if (strcmp(seen[d], sec) == 0) known = 1;
+        if (!known) {
+            if (depth == REVIEW_DEPTH) break;
+            seen[depth++] = sec;
+        }
+        if (done[k]) pool[n++] = k;
+    }
+    if (n == 0) return NEXT;
+    int count = n < REVIEW_SIZE ? n : REVIEW_SIZE;
+    printf("\n%s%sQuick review%s — %d from the last few sections, no explanations this time.\n", BOLD, YELLOW, RESET, count);
+    return review_lessons(pool, n, count);
+}
+
+/* Once everything is finished: every lesson once more, in random order. */
+static int final_review(void) {
+    int pool[LESSON_COUNT];
+    for (int k = 0; k < LESSON_COUNT; k++) pool[k] = k;
+    printf("\n%s%sFinal review%s — all %d lessons, mixed up, no explanations. Anything you miss gets taught again.\n",
+           BOLD, YELLOW, RESET, LESSON_COUNT);
+    return review_lessons(pool, LESSON_COUNT, LESSON_COUNT);
 }
 
 /* ---------- main ---------- */
@@ -679,10 +705,7 @@ int main(int argc, char **argv) {
     }
     if (start < 0) {
         for (int i = 0; i < LESSON_COUNT; i++) if (!done[i]) { start = i; break; }
-        if (start < 0) {
-            printf("You've finished all %d lessons. Start over with   shell-tutor 1   or clear progress with --reset.\n", LESSON_COUNT);
-            return 0;
-        }
+        if (start < 0) start = LESSON_COUNT;   /* everything done: straight to the final review */
     }
 
     srand((unsigned)time(NULL) ^ (unsigned)getpid());
@@ -718,11 +741,19 @@ int main(int argc, char **argv) {
 
     /* Lessons that were skipped (or answered with idk) come around again
        until they're done or the user gives up on them a second time. */
+    int reviewed_all = 0;
     while (!quit) {
         int pending = 0, done_this_pass = 0;
         for (int k = 0; k < LESSON_COUNT; k++) pending += !done[k];
+        if (pending == 0 && !reviewed_all) {
+            reviewed_all = 1;
+            int result = final_review();
+            if (result == QUIT) { quit = 1; break; }
+            continue;   /* anything forgotten during the review is taught again below */
+        }
         if (pending == 0) {
-            printf("\n%sThat's all %d lessons. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
+            printf("\n%sThat's all %d lessons, reviewed and all. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
+            printf("Run   shell-tutor   again any time for another full review, or   shell-tutor --reset   to start from scratch.\n");
             break;
         }
         printf("\n%sGoing back to the %d lesson%s you skipped or needed the answer for.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
