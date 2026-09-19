@@ -3,4 +3,5 @@
     <commands>
       <command name="shell-tutor" source="shell-tutor.c"/>
     </commands>
+    </package>
   </tlib>
