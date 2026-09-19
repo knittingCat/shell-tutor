@@ -80,17 +80,19 @@ static const Lesson LESSONS[] = {
       "Most commands accept options: extra words that start with a dash and change\n"
       "what the command does. Each option does one thing only. ls has two you'll\n"
       "use constantly:\n"
-      "  ls -a   shows hidden files as well. A file whose name starts with a dot,\n"
-      "          like .secret, is left out of the list unless you ask with -a.\n"
-      "  ls -l   changes the format: a long listing, one file per line, with its\n"
-      "          permissions, owner, size and date. It shows the same files as\n"
-      "          plain ls, so hidden files are still left out.\n"
-      "To get both effects you give both options. Several one-letter options can\n"
-      "share a single dash:  ls -l -t  and  ls -lt  mean the same thing.",
+      "  ls -a   lists ALL files: the ones plain ls shows, plus the hidden ones.\n"
+      "          A file whose name starts with a dot, like .secret, is hidden:\n"
+      "          plain ls leaves it out, ls -a includes it. One command, one list.\n"
+      "  ls -l   changes the format, not the selection: a long listing, one file\n"
+      "          per line, with its permissions, owner, size and date. It shows\n"
+      "          the same files as plain ls, so hidden files are still left out.\n"
+      "To get both effects you give both options to one ls. Several one-letter\n"
+      "options can share a single dash:  ls -l -t  and  ls -lt  mean the same thing.",
       "Show the hidden file too, in the long format.",
       "grep -q '\\.secret' \"$OUT\" && grep -qE '^[-d][rwx-]{9}' \"$OUT\"",
       "-l alone gives the format but not the hidden file; -a alone gives the hidden file but not the format. Give ls both.",
       "ls -la", NULL,
+      "[[ \"$CMD\" == *';'* || \"$CMD\" == *'&&'* ]] && echo 'Two commands give two lists. One ls with both options gives one list that has everything.'; "
       "grep -q '\\.secret' \"$OUT\" || echo 'The hidden file .secret is not in your list: that needs -a.'; "
       "grep -qE '^[-d][rwx-]{9}' \"$OUT\" || echo 'That is the short format: the long one needs -l.'" },
 
