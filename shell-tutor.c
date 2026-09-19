@@ -48,6 +48,7 @@ typedef struct {
     const char *hint;
     const char *answer;   /* RUN: a command that passes. QUIZ: explanation shown after answering */
     const char *options;  /* QUIZ only: choices separated by '\n' */
+    const char *diagnose; /* RUN, optional: zsh snippet run after a failed check; whatever it prints is shown */
 } Lesson;
 
 /*
@@ -64,7 +65,7 @@ static const Lesson LESSONS[] = {
       "Find out which folder you are in.",
       "grep -qx \"$(pwd)\" \"$OUT\" && [[ \"$CMD\" == *pwd* ]]",
       "p, then w, then d.",
-      "pwd", NULL },
+      "pwd", NULL, NULL },
 
     { "ls", RUN, "Getting around", "What's here?",
       "There's a two-letter command, short for \"list\", that shows the files and\n"
@@ -73,21 +74,25 @@ static const Lesson LESSONS[] = {
       "See what is in the current directory. (One of the things in it is a folder called docs.)",
       "grep -q 'fruits.txt' \"$OUT\" && grep -q 'docs' \"$OUT\"",
       "l, then s.",
-      "ls", NULL },
+      "ls", NULL, NULL },
 
     { "ls-la", RUN, "Getting around", "Hidden files and details",
       "Most commands accept options: extra words that start with a dash and change\n"
-      "what the command does. ls has two you'll use constantly:\n"
-      "  ls -a   also shows hidden files: any file whose name starts with a dot,\n"
-      "          like .secret, is normally left out of the list\n"
-      "  ls -l   shows a long listing: one file per line, with its permissions,\n"
-      "          owner, size and date\n"
-      "Several one-letter options can share a single dash:  ls -l -t  and  ls -lt\n"
-      "mean the same thing (-t sorts by date).",
-      "List everything here, hidden files included, as a long listing.",
+      "what the command does. Each option does one thing only. ls has two you'll\n"
+      "use constantly:\n"
+      "  ls -a   shows hidden files as well. A file whose name starts with a dot,\n"
+      "          like .secret, is left out of the list unless you ask with -a.\n"
+      "  ls -l   changes the format: a long listing, one file per line, with its\n"
+      "          permissions, owner, size and date. It shows the same files as\n"
+      "          plain ls, so hidden files are still left out.\n"
+      "To get both effects you give both options. Several one-letter options can\n"
+      "share a single dash:  ls -l -t  and  ls -lt  mean the same thing.",
+      "Show the hidden file too, in the long format.",
       "grep -q '\\.secret' \"$OUT\" && grep -qE '^[-d][rwx-]{9}' \"$OUT\"",
-      "You need both -l and -a; they can share one dash.",
-      "ls -la", NULL },
+      "-l alone gives the format but not the hidden file; -a alone gives the hidden file but not the format. Give ls both.",
+      "ls -la", NULL,
+      "grep -q '\\.secret' \"$OUT\" || echo 'The hidden file .secret is not in your list: that needs -a.'; "
+      "grep -qE '^[-d][rwx-]{9}' \"$OUT\" || echo 'That is the short format: the long one needs -l.'" },
 
     { "cd", RUN, "Getting around", "Moving into a folder",
       "  cd FOLDER   changes the current directory to FOLDER.\n"
@@ -99,7 +104,8 @@ static const Lesson LESSONS[] = {
       "Go into the docs folder and show the directory you are then in.",
       "grep -q '/docs$' \"$OUT\"",
       "cd docs ; pwd",
-      "cd docs; pwd", NULL },
+      "cd docs; pwd", NULL,
+      "grep -q 'docs' \"$OUT\" || echo 'Nothing printed the docs path: after the cd, add   ; pwd   on the same line.'; [[ \"$CMD\" == *cd* ]] || echo 'You never changed directory: start with cd docs.'" },
 
     { "cat", RUN, "Reading files", "Show a file",
       "  cat FILE   prints a file's contents. Short for \"concatenate\": given\n"
@@ -107,7 +113,8 @@ static const Lesson LESSONS[] = {
       "Print the contents of fruits.txt.",
       "grep -q '^banana$' \"$OUT\" && grep -q '^cherry$' \"$OUT\"",
       "cat, then the file name.",
-      "cat fruits.txt", NULL },
+      "cat fruits.txt", NULL,
+      "grep -q banana \"$OUT\" || echo 'The contents of fruits.txt did not appear.'" },
 
     { "head-tail", RUN, "Reading files", "Just the start or the end",
       "Long files are easier to peek at:\n"
@@ -116,7 +123,8 @@ static const Lesson LESSONS[] = {
       "Print only the last 2 lines of numbers.txt.",
       "[ \"$(cat \"$OUT\")\" = \"$(printf '19\\n20')\" ]",
       "tail with -n 2.",
-      "tail -n 2 numbers.txt", NULL },
+      "tail -n 2 numbers.txt", NULL,
+      "[[ \"$CMD\" == *head* ]] && echo 'head gives the START of the file; the last lines come from tail.'; n=$(wc -l < \"$OUT\"); [ \"$n\" -eq 2 ] || echo \"That printed $n lines, not 2: use -n 2.\"" },
 
     { "mkdir", RUN, "Making and changing files", "Make a folder",
       "  mkdir NAME   creates a directory.\n"
@@ -124,7 +132,8 @@ static const Lesson LESSONS[] = {
       "Create a folder called photos.",
       "[ -d photos ]",
       "mkdir, then the name.",
-      "mkdir photos", NULL },
+      "mkdir photos", NULL,
+      "[ -e photos ] || echo 'There is no photos folder yet.'; [ -f photos ] && echo 'photos exists but it is a file, not a folder: mkdir makes folders.'" },
 
     { "cp", RUN, "Making and changing files", "Copy a file",
       "  cp SOURCE DEST   copies a file. DEST can be a new file name or a folder.\n"
@@ -132,7 +141,8 @@ static const Lesson LESSONS[] = {
       "Make a copy of fruits.txt called fruits-backup.txt.",
       "[ -f fruits-backup.txt ] && cmp -s fruits.txt fruits-backup.txt",
       "cp fruits.txt <new name>",
-      "cp fruits.txt fruits-backup.txt", NULL },
+      "cp fruits.txt fruits-backup.txt", NULL,
+      "[ -e fruits-backup.txt ] || echo 'No file called fruits-backup.txt exists yet.'; [ -f fruits.txt ] || echo 'fruits.txt is gone: that was a move, not a copy. Use cp.'" },
 
     { "mv", RUN, "Making and changing files", "Rename or move",
       "  mv OLD NEW   renames a file, or moves it if NEW is a folder.\n"
@@ -140,7 +150,8 @@ static const Lesson LESSONS[] = {
       "Rename notes.txt to todo.txt.",
       "[ -f todo.txt ] && [ ! -e notes.txt ]",
       "mv, old name, new name.",
-      "mv notes.txt todo.txt", NULL },
+      "mv notes.txt todo.txt", NULL,
+      "[ -e notes.txt ] && echo 'notes.txt is still here: mv should leave only todo.txt.'; [ -e todo.txt ] || echo 'There is no todo.txt yet.'" },
 
     { "rm", RUN, "Making and changing files", "Delete",
       "  rm FILE   deletes a file. There is no trash and no undo.\n"
@@ -149,7 +160,8 @@ static const Lesson LESSONS[] = {
       "Delete the file called old.log.",
       "[ ! -e old.log ] && [ -f fruits.txt ]",
       "rm, then the file name.",
-      "rm old.log", NULL },
+      "rm old.log", NULL,
+      "[ -e old.log ] && echo 'old.log is still here.'; [ -f fruits.txt ] || echo 'fruits.txt was deleted too: rm only old.log.'" },
 
     { "redirect", RUN, "Redirection", "Send output to a file",
       "Every command's output normally goes to the screen. The > sign sends it\n"
@@ -159,7 +171,8 @@ static const Lesson LESSONS[] = {
       "Create a file called greeting.txt containing the single word hello.",
       "[ \"$(cat greeting.txt 2>/dev/null)\" = \"hello\" ]",
       "echo hello > greeting.txt",
-      "echo hello > greeting.txt", NULL },
+      "echo hello > greeting.txt", NULL,
+      "[ -e greeting.txt ] || echo 'No greeting.txt was created: send the output into it with >.'; [ -e greeting.txt ] && [ \"$(cat greeting.txt)\" != hello ] && echo \"greeting.txt contains '$(cat greeting.txt)', not hello.\"" },
 
     { "append", RUN, "Redirection", "Add to the end of a file",
       "  >>   appends instead of replacing.\n"
@@ -167,7 +180,8 @@ static const Lesson LESSONS[] = {
       "Add the line   date   to the end of fruits.txt without losing what's there.",
       "[ \"$(tail -n 1 fruits.txt)\" = \"date\" ] && grep -q '^apple$' fruits.txt",
       "echo date >> fruits.txt",
-      "echo date >> fruits.txt", NULL },
+      "echo date >> fruits.txt", NULL,
+      "grep -q '^apple$' fruits.txt || echo 'The original lines are gone: > replaced the file. Appending is >>.'; grep -q '^date$' fruits.txt || echo 'date was not added to fruits.txt.'" },
 
     { "pipe", RUN, "Pipes", "Connect two commands",
       "The | sign (a pipe) sends one command's output into the next command's\n"
@@ -177,7 +191,8 @@ static const Lesson LESSONS[] = {
       "Show only the lines of fruits.txt that contain the letter e.",
       "[[ \"$CMD\" == *'|'* ]] && grep -q '^cherry$' \"$OUT\" && ! grep -q '^banana$' \"$OUT\"",
       "cat the file, pipe it into grep e.",
-      "cat fruits.txt | grep e", NULL },
+      "cat fruits.txt | grep e", NULL,
+      "[[ \"$CMD\" == *'|'* ]] || echo 'No pipe in that command: send the output of one command into grep with |.'; grep -q '^banana$' \"$OUT\" && echo 'banana came through, and it has no e: grep should keep only matching lines.'" },
 
     { "wc", RUN, "Pipes", "Count things",
       "  wc -l   counts lines.   wc -w   counts words.   wc -c   counts bytes.\n"
@@ -186,7 +201,8 @@ static const Lesson LESSONS[] = {
       "Print how many lines numbers.txt has, using a pipe so only the number appears.",
       "[[ \"$CMD\" == *'|'* ]] && [ \"$(tr -d ' ' < \"$OUT\")\" = \"20\" ]",
       "cat numbers.txt | wc -l",
-      "cat numbers.txt | wc -l", NULL },
+      "cat numbers.txt | wc -l", NULL,
+      "[[ \"$CMD\" == *'|'* ]] || echo 'Use a pipe: cat the file and pipe it into wc -l.'; grep -q 'numbers.txt' \"$OUT\" && echo 'The file name is in the output: that means wc was given the file name instead of piped input.'" },
 
     { "sort-uniq", RUN, "Pipes", "Sort and de-duplicate",
       "  sort   puts lines in order.   uniq   drops repeated lines, but only when\n"
@@ -195,7 +211,8 @@ static const Lesson LESSONS[] = {
       "Print each color in colors.txt once, in alphabetical order.",
       "[ \"$(cat \"$OUT\")\" = \"$(printf 'blue\\ngreen\\nred\\nyellow')\" ]",
       "sort colors.txt | uniq",
-      "sort colors.txt | uniq", NULL },
+      "sort colors.txt | uniq", NULL,
+      "[[ \"$CMD\" == *sort* ]] || echo 'The lines are not sorted: uniq only removes repeats that are next to each other, so sort first.'; [[ \"$CMD\" == *uniq* ]] || echo 'Repeats are still there: pipe the sorted lines into uniq.'" },
 
     { "find", RUN, "Searching", "Find files by name",
       "  find . -name 'PATTERN'   searches the current directory (.) and every\n"
@@ -203,7 +220,8 @@ static const Lesson LESSONS[] = {
       "Find every file whose name ends in .md, anywhere under the current directory.",
       "grep -q 'docs/readme.md' \"$OUT\" && grep -q 'docs/guide/setup.md' \"$OUT\" && ! grep -q 'fruits.txt' \"$OUT\"",
       "find . -name '*.md'",
-      "find . -name '*.md'", NULL },
+      "find . -name '*.md'", NULL,
+      "grep -q 'setup.md' \"$OUT\" || echo 'docs/guide/setup.md was not found: find searches every folder below the one you give it (start from .).'; grep -q 'fruits.txt' \"$OUT\" && echo 'fruits.txt matched too: the -name pattern should only match .md.'" },
 
     { "grep-r", RUN, "Searching", "Search inside files",
       "  grep -r WORD FOLDER   looks for WORD inside every file under FOLDER and\n"
@@ -212,7 +230,8 @@ static const Lesson LESSONS[] = {
       "Find which file under docs mentions the word install (any case).",
       "grep -q 'setup.md' \"$OUT\" && ! grep -q 'readme.md' \"$OUT\"",
       "grep -ri install docs",
-      "grep -ri install docs", NULL },
+      "grep -ri install docs", NULL,
+      "grep -q 'setup.md' \"$OUT\" || echo 'setup.md was not reported: it says INSTALL in capitals, so ignore case with -i, and search the docs folder recursively with -r.'" },
 
     { "chmod", RUN, "Scripts", "Make a script runnable",
       "hello.sh is a shell script, but it can't be run yet: files need the\n"
@@ -223,7 +242,8 @@ static const Lesson LESSONS[] = {
       "Make hello.sh executable and run it.",
       "[ -x hello.sh ] && grep -q 'Hello from a script' \"$OUT\"",
       "chmod +x hello.sh ; ./hello.sh",
-      "chmod +x hello.sh; ./hello.sh", NULL },
+      "chmod +x hello.sh; ./hello.sh", NULL,
+      "[ -x hello.sh ] || echo 'hello.sh is still not executable: chmod +x hello.sh first.'; grep -q 'Hello from a script' \"$OUT\" || echo 'The script did not run: after chmod, run it as ./hello.sh on the same line.'" },
 
     { "vars", RUN, "Scripts", "Variables",
       "  NAME=value   sets a shell variable (no spaces around the =).\n"
@@ -232,7 +252,8 @@ static const Lesson LESSONS[] = {
       "Set a variable to the output of   whoami   and echo   I am <that name>.",
       "grep -q \"^I am $(whoami)$\" \"$OUT\" && [[ \"$CMD\" == *'$'* ]]",
       "me=$(whoami); echo \"I am $me\"",
-      "me=$(whoami); echo \"I am $me\"", NULL },
+      "me=$(whoami); echo \"I am $me\"", NULL,
+      "[[ \"$CMD\" == *'$'* ]] || echo 'No variable was used: set one with name=$(whoami) and use it as $name.'; grep -q \"I am $(whoami)\" \"$OUT\" || echo 'The output should read exactly: I am <your user name>.'" },
 
     { "and-or", RUN, "Combining commands", "; versus &&",
       "  a ; b     runs a, then b, no matter what.\n"
@@ -242,7 +263,8 @@ static const Lesson LESSONS[] = {
       "Try to cat a file that doesn't exist (nope.txt) and print   missing   only if that fails.",
       "grep -q '^missing$' \"$OUT\" && [[ \"$CMD\" == *'||'* ]]",
       "cat nope.txt || echo missing",
-      "cat nope.txt 2>/dev/null || echo missing", NULL },
+      "cat nope.txt 2>/dev/null || echo missing", NULL,
+      "[[ \"$CMD\" == *'||'* ]] || echo 'Use || between the two commands: the second runs only if the first fails.'; grep -q '^missing$' \"$OUT\" || echo 'missing was not printed.'" },
 
     { "ctrl-z", QUIZ, "Jobs", "Ctrl-Z",
       "While a command is running in the foreground, the terminal is busy: you can't\n"
@@ -254,7 +276,7 @@ static const Lesson LESSONS[] = {
       "Suspended is not the same as stopped for good.",
       "The sleep is paused mid-way, listed by jobs as \"suspended\", and you get a prompt.\n"
       "It is not killed and it does not keep counting: it is frozen until you resume it.",
-      "a) sleep is killed\nb) sleep is paused and you get a prompt back\nc) sleep keeps running in the background\nd) the terminal closes" },
+      "a) sleep is killed\nb) sleep is paused and you get a prompt back\nc) sleep keeps running in the background\nd) the terminal closes", NULL },
 
     { "fg-bg", QUIZ, "Jobs", "fg and bg",
       "A suspended job can be resumed two ways:\n"
@@ -268,7 +290,7 @@ static const Lesson LESSONS[] = {
       "You want it running AND you want the prompt.",
       "bg resumes the job in the background: the copy continues and the prompt is yours.\n"
       "fg would also resume it, but then the terminal is busy again until it finishes.",
-      "a) fg\nb) jobs\nc) bg\nd) kill %1" },
+      "a) fg\nb) jobs\nc) bg\nd) kill %1", NULL },
 
     { "ampersand", QUIZ, "Jobs", "Starting in the background",
       "Putting & after a command starts it in the background straight away:\n"
@@ -280,7 +302,7 @@ static const Lesson LESSONS[] = {
       "%1 is a job spec.",
       "fg %1 brings job number 1 into the foreground. Plain fg picks the most recent\n"
       "job; %1, %2 ... choose a specific one from the jobs list.",
-      "a) forks the current shell\nb) runs job 1 again from the start\nc) kills job 1\nd) brings job 1 to the foreground" },
+      "a) forks the current shell\nb) runs job 1 again from the start\nc) kills job 1\nd) brings job 1 to the foreground", NULL },
 
     { "chain-suspend", QUIZ, "Jobs", "What exactly gets suspended",
       "Ctrl-Z suspends the program that is running at that instant, not your whole\n"
@@ -293,7 +315,7 @@ static const Lesson LESSONS[] = {
       "\"done\" appears immediately: the shell moved on to echo as soon as sleep was\n"
       "suspended. The sleep is still there as a suspended job. To suspend the whole\n"
       "sequence as one job, run it as one process: ( sleep 8 ; echo done ).",
-      "a) nothing, both are suspended\nb) done, right away, and sleep is left suspended\nc) done, after the remaining 6 seconds\nd) an error" },
+      "a) nothing, both are suspended\nb) done, right away, and sleep is left suspended\nc) done, after the remaining 6 seconds\nd) an error", NULL },
 
     { "kill", QUIZ, "Jobs", "Getting rid of a job",
       "  kill %1      asks job 1 to quit (sends SIGTERM).\n"
@@ -305,7 +327,7 @@ static const Lesson LESSONS[] = {
       "You can kill a job by its job spec.",
       "kill %1 ends it. fg %1 would also make it go away eventually, but by resuming\n"
       "it in the foreground and waiting for it to finish.",
-      "a) kill %1\nb) fg %1\nc) exit\nd) bg %1" },
+      "a) kill %1\nb) fg %1\nc) exit\nd) bg %1", NULL },
 
     /* ---- second tier ---- */
 
@@ -317,7 +339,8 @@ static const Lesson LESSONS[] = {
       "wc prints a total line when given several files.",
       "[[ \"$CMD\" == *'*'* ]] && grep -q 'total' \"$OUT\"",
       "wc -l with a wildcard.",
-      "wc -l *.txt", NULL },
+      "wc -l *.txt", NULL,
+      "[[ \"$CMD\" == *'*'* ]] || echo 'No wildcard used: *.txt stands for every .txt file here.'; grep -q total \"$OUT\" || echo 'No total line: give wc all the .txt files at once, not one.'" },
 
     { "touch", RUN, "Wildcards", "Empty files and brace expansion",
       "  touch NAME   creates an empty file (or just updates the date of an existing one).\n"
@@ -326,7 +349,8 @@ static const Lesson LESSONS[] = {
       "Create three empty files at once: draft1.txt, draft2.txt and draft3.txt.",
       "[ -f draft1.txt ] && [ -f draft2.txt ] && [ -f draft3.txt ] && [[ \"$CMD\" == *'{'* ]]",
       "touch draft{1,2,3}.txt",
-      "touch draft{1,2,3}.txt", NULL },
+      "touch draft{1,2,3}.txt", NULL,
+      "for f in draft1.txt draft2.txt draft3.txt; do [ -f $f ] || echo \"$f does not exist yet.\"; done; [[ \"$CMD\" == *'{'* ]] || echo 'Do it in one go with braces: draft{1,2,3}.txt'" },
 
     { "stderr", RUN, "Errors and status", "Errors have their own stream",
       "Commands print normal output on stream 1 (stdout) and errors on stream 2\n"
@@ -337,7 +361,8 @@ static const Lesson LESSONS[] = {
       "while the fruit list still prints.",
       "grep -q '^banana$' \"$OUT\" && grep -qi 'nope.txt' errors.txt && ! grep -qi 'no such file' \"$OUT\"",
       "... 2> errors.txt",
-      "cat nope.txt fruits.txt 2> errors.txt", NULL },
+      "cat nope.txt fruits.txt 2> errors.txt", NULL,
+      "[ -e errors.txt ] || echo 'No errors.txt was written: redirect stream 2 with 2> errors.txt.'; grep -qi 'no such file' \"$OUT\" && echo 'The error still printed on screen: > only redirects normal output; errors are stream 2.'; grep -q '^banana$' \"$OUT\" || echo 'The fruit list should still print normally.'" },
 
     { "status", RUN, "Errors and status", "Exit status",
       "Every command ends with a number: 0 means success, anything else means some\n"
@@ -346,7 +371,8 @@ static const Lesson LESSONS[] = {
       "Run   grep zzz fruits.txt   and then print its exit status on the next line.",
       "[ \"$(tail -n 1 \"$OUT\")\" = \"1\" ] && [[ \"$CMD\" == *'$?'* ]]",
       "grep zzz fruits.txt ; echo $?",
-      "grep zzz fruits.txt; echo $?", NULL },
+      "grep zzz fruits.txt; echo $?", NULL,
+      "[[ \"$CMD\" == *'$?'* ]] || echo 'Print the special variable $? right after grep, on the same line: ; echo $?'" },
 
     { "cut", RUN, "Text tools", "Pick columns",
       "people.csv has lines like   ada,lovelace,1815   — fields separated by commas.\n"
@@ -355,7 +381,8 @@ static const Lesson LESSONS[] = {
       "Print just the birth years (the third field) from people.csv.",
       "[ \"$(cat \"$OUT\")\" = \"$(printf '1815\\n1912\\n1906')\" ]",
       "cut with -d , and -f 3",
-      "cut -d , -f 3 people.csv", NULL },
+      "cut -d , -f 3 people.csv", NULL,
+      "grep -q ',' \"$OUT\" && echo 'Commas are still in the output: tell cut the delimiter is a comma with -d ,'; grep -q 'ada' \"$OUT\" && echo 'Names are showing: pick only field 3 with -f 3.'" },
 
     { "tr", RUN, "Text tools", "Change characters",
       "  tr A B   replaces every A with B in whatever is piped into it. It takes\n"
@@ -364,7 +391,8 @@ static const Lesson LESSONS[] = {
       "Print fruits.txt in upper case.",
       "grep -q '^BANANA$' \"$OUT\" && grep -q '^CHERRY$' \"$OUT\"",
       "cat fruits.txt | tr a-z A-Z",
-      "cat fruits.txt | tr a-z A-Z", NULL },
+      "cat fruits.txt | tr a-z A-Z", NULL,
+      "grep -q '^banana$' \"$OUT\" && echo 'Still lower case: pipe the file into tr a-z A-Z.'; [[ \"$CMD\" == *'tr'*'fruits.txt' ]] && echo 'tr does not take a file name: feed the file in with cat ... | tr or with < fruits.txt.'" },
 
     { "sort-n", RUN, "Text tools", "Sort numbers as numbers",
       "  sort   compares text, so 10 comes before 9 (1 is less than 9).\n"
@@ -373,7 +401,8 @@ static const Lesson LESSONS[] = {
       "Print the single largest number in scores.txt.",
       "[ \"$(cat \"$OUT\")\" = \"97\" ]",
       "sort -n, reversed, then head -n 1",
-      "sort -nr scores.txt | head -n 1", NULL },
+      "sort -nr scores.txt | head -n 1", NULL,
+      "n=$(wc -l < \"$OUT\"); [ \"$n\" -eq 1 ] || echo \"That printed $n lines; only the largest number should appear (head -n 1 after sorting).\"; grep -qx '97' \"$OUT\" || echo 'Not 97: plain sort compares text, so 10 sorts before 9 and 97 before 98. Compare as numbers with -n, and reverse with -r.'" },
 
     { "tee", RUN, "Text tools", "Save and see at once",
       "  | tee FILE   writes what flows through the pipe into FILE and also passes\n"
@@ -381,7 +410,8 @@ static const Lesson LESSONS[] = {
       "Sort fruits.txt, saving the sorted list to sorted.txt while it also prints on screen.",
       "grep -q '^apple$' \"$OUT\" && [ \"$(cat sorted.txt 2>/dev/null)\" = \"$(sort fruits.txt)\" ]",
       "sort fruits.txt | tee sorted.txt",
-      "sort fruits.txt | tee sorted.txt", NULL },
+      "sort fruits.txt | tee sorted.txt", NULL,
+      "[ -e sorted.txt ] || echo 'sorted.txt was not written: put   | tee sorted.txt   after the sort.'; grep -q '^apple$' \"$OUT\" || echo 'Nothing printed on screen: tee passes the output on as well as saving it; > would swallow it.'" },
 
     { "for", RUN, "Loops", "Do something for each file",
       "  for f in *.txt; do echo \"$f\"; done\n"
@@ -391,7 +421,8 @@ static const Lesson LESSONS[] = {
       "Any format is fine as long as each name and its count appear.",
       "[[ \"$CMD\" == *'for '* ]] && grep -q 'readme.md' \"$OUT\" && grep -q 'setup.md' \"$OUT\" && grep -q '3' \"$OUT\"",
       "for f in $(find docs -name '*.md'); do wc -l \"$f\"; done",
-      "for f in $(find docs -name '*.md'); do wc -l \"$f\"; done", NULL },
+      "for f in $(find docs -name '*.md'); do wc -l \"$f\"; done", NULL,
+      "[[ \"$CMD\" == *'for '* ]] || echo 'Use a for loop: for f in ...; do ...; done'; grep -q 'setup.md' \"$OUT\" || echo 'setup.md is missing: find docs -name \\'*.md\\' lists every .md file under docs.'" },
 
     { "xargs", RUN, "Loops", "Turn output into arguments",
       "  find ... | xargs COMMAND   runs COMMAND with everything find printed as its\n"
@@ -401,7 +432,8 @@ static const Lesson LESSONS[] = {
       "There are three: old.log, logs/a.log and logs/b.log.",
       "[[ \"$CMD\" == *xargs* ]] && [ ! -e old.log ] && [ ! -e logs/a.log ] && [ -f fruits.txt ]",
       "find . -name '*.log' | xargs rm",
-      "find . -name '*.log' | xargs rm", NULL },
+      "find . -name '*.log' | xargs rm", NULL,
+      "[[ \"$CMD\" == *xargs* ]] || echo 'Use xargs: find lists the files, xargs hands them to rm as arguments.'; [ -e logs/a.log ] && echo 'logs/a.log is still there: find must search below the current directory too (start from .).'" },
 
     { "ln", RUN, "Links and archives", "Symbolic links",
       "  ln -s TARGET NAME   makes NAME a symbolic link: a small pointer to TARGET.\n"
@@ -410,7 +442,8 @@ static const Lesson LESSONS[] = {
       "Create a link called latest that points to docs/readme.md.",
       "[ -L latest ] && [ \"$(readlink latest)\" = \"docs/readme.md\" ]",
       "ln -s docs/readme.md latest",
-      "ln -s docs/readme.md latest", NULL },
+      "ln -s docs/readme.md latest", NULL,
+      "[ -e latest ] || echo 'Nothing called latest exists yet.'; [ -e latest ] && [ ! -L latest ] && echo 'latest is a copy, not a link: use ln -s.'; [ -L latest ] && [ \"$(readlink latest)\" != docs/readme.md ] && echo \"latest points to $(readlink latest), not docs/readme.md: the target comes first, the link name second.\"" },
 
     { "tar", RUN, "Links and archives", "Bundle a folder",
       "  tar -czf NAME.tar.gz FOLDER   packs FOLDER into one compressed file.\n"
@@ -419,7 +452,8 @@ static const Lesson LESSONS[] = {
       "Pack the docs folder into docs.tar.gz.",
       "[ -f docs.tar.gz ] && tar -tzf docs.tar.gz | grep -q 'docs/readme.md'",
       "tar -czf docs.tar.gz docs",
-      "tar -czf docs.tar.gz docs", NULL },
+      "tar -czf docs.tar.gz docs", NULL,
+      "[ -e docs.tar.gz ] || echo 'No docs.tar.gz was created: tar -czf docs.tar.gz <folder>.'" },
 
     { "which", RUN, "Finding programs", "Where a command lives",
       "Commands are files too. The shell finds them by searching the folders listed\n"
@@ -428,7 +462,8 @@ static const Lesson LESSONS[] = {
       "Print the full path of the ls program.",
       "grep -q '/ls$' \"$OUT\"",
       "which ls",
-      "which ls", NULL },
+      "which ls", NULL,
+      "grep -q '/' \"$OUT\" || echo 'The output should be a full path such as /bin/ls: ask with which ls.'" },
 
     { "man", QUIZ, "Finding programs", "Reading the manual",
       "  man COMMAND   opens the manual page for a command: every option, explained.\n"
@@ -439,7 +474,7 @@ static const Lesson LESSONS[] = {
       "The pager has a one-letter key for quitting.",
       "q quits the pager. Ctrl-C usually works too, but q is the intended way; Ctrl-Z\n"
       "would only suspend it, leaving a job behind.",
-      "a) Ctrl-Z\nb) Escape\nc) q\nd) exit" },
+      "a) Ctrl-Z\nb) Escape\nc) q\nd) exit", NULL },
 };
 
 #define LESSON_COUNT ((int)(sizeof LESSONS / sizeof LESSONS[0]))
@@ -502,6 +537,7 @@ static char *read_line(const char *prompt, char *buf, size_t size) {
 static char scratch_root[PATH_MAX];   /* mkdtemp result */
 static char work_dir[PATH_MAX];       /* scratch_root/work: where commands run */
 static char out_file[PATH_MAX];       /* scratch_root/out: captured output */
+static char diag_file[PATH_MAX];      /* scratch_root/diag: what a lesson's diagnosis printed */
 
 /*
  * Runs `script` with zsh in `dir`. Output goes to `capture` (or is discarded
@@ -548,6 +584,7 @@ static void setup_scratch(void) {
     if (!mkdtemp(scratch_root)) die("mkdtemp");
     snprintf(work_dir, sizeof work_dir, "%s/work", scratch_root);
     snprintf(out_file, sizeof out_file, "%s/out", scratch_root);
+    snprintf(diag_file, sizeof diag_file, "%s/diag", scratch_root);
 }
 
 static void remove_scratch(void) {
@@ -685,6 +722,17 @@ static void forget(int i) {
     save_progress();
 }
 
+/* After a failed check: run the lesson's diagnosis, print what it says. */
+static void explain_failure(const Lesson *l, const char *input) {
+    if (!l->diagnose) return;
+    run_shell(l->diagnose, work_dir, diag_file, input);
+    FILE *f = fopen(diag_file, "r");
+    if (!f) return;
+    char line[512];
+    while (fgets(line, sizeof line, f)) printf("%s  %s%s", YELLOW, line, RESET);
+    fclose(f);
+}
+
 static int run_lesson(int i, int review) {
     const Lesson *l = &LESSONS[i];
     print_header(i, review);
@@ -721,12 +769,14 @@ static int run_lesson(int i, int review) {
             save_progress();
             return NEXT;
         }
+        printf("%sNot quite.%s\n", RED, RESET);
+        explain_failure(l, input);
         if (review && ++tries >= REVIEW_TRIES) {
-            printf("%sNot quite.%s One way:  %s\nBack into the lessons it goes.\n", RED, RESET, l->answer);
+            printf("One way:  %s\nBack into the lessons it goes.\n", l->answer);
             forget(i);
             return NEXT;
         }
-        printf("%sNot quite.%s Try again, or type hint.\n", RED, RESET);
+        printf("Try again, or type hint.\n");
         reset_work_dir();
     }
 }
