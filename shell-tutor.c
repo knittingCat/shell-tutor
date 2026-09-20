@@ -378,9 +378,12 @@ static const Lesson BASIC[] = {
       "takes two steps.\n"
       "  1. Give the file permission to be run: chmod +x FILE (change mode, add\n"
       "     execute). A file made with an editor or > does not have it.\n"
-      "  2. Run it by typing its path: ./FILE. The ./ means \"the one in this\n"
-      "     folder\"; typing the bare name does not work, because the shell looks\n"
-      "     for commands only in its list of program folders, not where you are.\n"
+      "  2. Run it by typing its path: ./FILE. You know . (the folder you are\n"
+      "     in) and / (joins the parts of a path), so ./FILE is \"FILE, starting\n"
+      "     from this folder\": the same file plain FILE names for cat or ls.\n"
+      "     Typing the bare name does not run it, because the shell looks for\n"
+      "     commands only in its list of program folders, not where you are;\n"
+      "     the ./ says \"no, this one, right here\".\n"
       "So for a script called go.sh: chmod +x go.sh, then ./go.sh. Here the two\n"
       "go on one line with ; between them, since each line is a fresh shell.",
       "Make hello.sh executable and run it.",
