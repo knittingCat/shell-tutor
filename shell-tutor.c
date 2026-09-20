@@ -40,6 +40,7 @@
 #define REVIEW_SIZE 3         /* earlier lessons re-asked at the end of each section */
 #define REVIEW_POOL 10        /* ...drawn from the nearest earlier sections holding this many done lessons */
 #define REVIEW_TRIES 2
+#define REVIEW_TRIES_ADVANCED 4   /* advanced answers are often two steps: write the script, run it */
 
 /* ---------- lessons ---------- */
 
@@ -65,7 +66,7 @@ typedef struct {
  *   $OUT  path to a file holding everything the command printed
  *   $CMD  the command text the user typed
  */
-static const Lesson LESSONS[] = {
+static const Lesson BASIC[] = {
     { "pwd", RUN, "Getting around", "Where am I?",
       "Directory is the shell's word for a folder; the two mean exactly the same\n"
       "thing, and you'll see both. The shell always has a current directory: the\n"
@@ -613,7 +614,486 @@ static const Lesson LESSONS[] = {
       "a) Ctrl-Z\nb) Escape\nc) q\nd) exit", NULL },
 };
 
-#define LESSON_COUNT ((int)(sizeof LESSONS / sizeof LESSONS[0]))
+/* ---------- the second tier: shell-tutor --advanced ---------- */
+
+static const Lesson ADVANCED[] = {
+    /* ----- Writing files ----- */
+
+    { "printf", RUN, "Writing files", "printf: text with a shape",
+      "echo prints its words and adds a newline. printf is the precise version:\n"
+      "it takes a FORMAT first, then the values to put into it.\n"
+      "  printf 'FORMAT' VALUE VALUE...\n"
+      "In the format, %s stands for the next value (any text), %d for the next\n"
+      "value as a whole number, \\n is a line break, \\t a tab. printf adds no\n"
+      "newline by itself; you write the \\n. For example\n"
+      "  printf '%s has %d legs\\n' cat 4 prints: cat has 4 legs\n"
+      "Given more values than the format uses, printf runs the format again for\n"
+      "the next ones: printf '%s\\n' a b c prints three lines.",
+      "With one printf, print two lines: ada, a tab, 1815; then alan, a tab, 1912.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf 'ada\\t1815\\nalan\\t1912')\" ] && [[ \"$CMD\" == *printf* ]]",
+      "One format with %s, \\t, %d and \\n, followed by four values.",
+      "printf '%s\\t%d\\n' ada 1815 alan 1912", NULL,
+      "[[ \"$CMD\" == *printf* ]] || echo 'Use printf: its format is what makes the tab and the two lines.'; grep -q '\\\\t' \"$OUT\" && echo 'A literal \\\\t was printed: in printf the escapes go in the FORMAT, and the format goes in single quotes.'; [ \"$(wc -l < \"$OUT\")\" -lt 2 ] && echo 'Only one line came out: the format needs a \\\\n at the end so each pair ends a line.'" },
+
+    { "printf-file", RUN, "Writing files", "A small file in one line",
+      "Since printf writes exactly what the format says, line breaks included, it is\n"
+      "the quickest way to create a short file with several lines: printf the lines\n"
+      "and redirect (>) into the file.\n"
+      "  printf 'one\\ntwo\\n' > pair.txt makes a two-line file.",
+      "Create shopping.txt containing three lines: eggs, milk, bread.",
+      "[ \"$(cat shopping.txt 2>/dev/null)\" = \"$(printf 'eggs\\nmilk\\nbread')\" ]",
+      "printf with three words and a \\n after each, redirected into shopping.txt.",
+      "printf 'eggs\\nmilk\\nbread\\n' > shopping.txt", NULL,
+      "[ -e shopping.txt ] || echo 'No shopping.txt was created: redirect the output into it with >.'; [ -e shopping.txt ] && [ \"$(wc -l < shopping.txt)\" -ne 3 ] && echo \"shopping.txt has $(wc -l < shopping.txt | tr -d ' ') lines, not 3: put a \\\\n after every word.\"" },
+
+    { "heredoc", RUN, "Writing files", "Here-documents: a file typed in place",
+      "For anything longer than a line or two, printf gets unreadable. A\n"
+      "here-document lets you type the file's contents as they are:\n"
+      "  cat > FILE <<'EOF'\n"
+      "  first line\n"
+      "  second line\n"
+      "  EOF\n"
+      "Everything between the <<'EOF' line and the line that is just EOF becomes\n"
+      "the input of cat, which writes it to FILE. EOF is only a convention; any\n"
+      "word works, as long as the same word ends it. The quotes around it mean\n"
+      "\"take the text exactly\", so $ signs inside are not expanded.\n"
+      "At this prompt, after a line containing << the tutor keeps reading lines\n"
+      "(prompt: >) until you type the end word on its own.",
+      "Using a here-document, create poem.txt with the lines: roses are red, and: violets are blue.",
+      "[[ \"$CMD\" == *'<<'* ]] && [ \"$(cat poem.txt 2>/dev/null)\" = \"$(printf 'roses are red\\nviolets are blue')\" ]",
+      "cat > poem.txt <<'EOF', then the two lines, then EOF alone.",
+      "cat > poem.txt <<'EOF'\nroses are red\nviolets are blue\nEOF", NULL,
+      "[[ \"$CMD\" == *'<<'* ]] || echo 'No here-document there: start with cat > poem.txt <<'\"'\"'EOF'\"'\"' and type the lines on the following prompts.'; [ -e poem.txt ] && grep -q EOF poem.txt && echo 'The end word got into the file: it must be alone on its own line, spelled exactly as after the <<.'" },
+
+    { "quotes", RUN, "Writing files", "Single versus double quotes",
+      "Quotes group words, but the two kinds differ in one thing: what happens\n"
+      "to $ inside them.\n"
+      "  \"double quotes\" still expand variables: \"hello $USER\" contains your name.\n"
+      "  'single quotes' take every character literally: 'hello $USER' has a $.\n"
+      "Use double quotes around anything with a variable in it, single quotes when\n"
+      "you want the text untouched (printf formats, sed and grep patterns).",
+      "Set a variable city to Paris, then print exactly: I live in Paris, using the variable inside quotes.",
+      "grep -qx 'I live in Paris' \"$OUT\" && [[ \"$CMD\" == *'$city'* || \"$CMD\" == *'${city}'* ]]",
+      "city=Paris; echo \"...$city\"",
+      "city=Paris; echo \"I live in $city\"", NULL,
+      "grep -q '\\$city' \"$OUT\" && echo 'The output shows $city itself: single quotes stop expansion; put the sentence in double quotes.'; [[ \"$CMD\" == *'$city'* ]] || echo 'Use the variable ($city) inside the sentence rather than typing Paris again.'" },
+
+    /* ----- Scripts ----- */
+
+    { "script-write", RUN, "Scripts", "A script from scratch",
+      "A script is a file of commands. Three things make it runnable:\n"
+      "  1. the first line #!/bin/sh, which names the program that should read\n"
+      "     the file (the shebang);\n"
+      "  2. execute permission: chmod +x FILE;\n"
+      "  3. running it as ./FILE (or from anywhere by its path).\n"
+      "Without step 2 you can still run it as sh FILE. Write the file with a\n"
+      "here-document. Inside, $(command) works as it does at the prompt.",
+      "Write today.sh, which prints: Today is, followed by the output of date, on one line. Make it executable and run it.",
+      "[ -x today.sh ] && head -1 today.sh | grep -q '^#!' && grep -q '^Today is .*20[0-9][0-9]' \"$OUT\"",
+      "cat > today.sh <<'EOF' with #!/bin/sh and echo \"Today is $(date)\", then chmod +x today.sh; ./today.sh",
+      "cat > today.sh <<'EOF'\n#!/bin/sh\necho \"Today is $(date)\"\nEOF\nchmod +x today.sh; ./today.sh", NULL,
+      "[ -e today.sh ] || echo 'There is no today.sh yet: create it first, with a here-document.'; [ -e today.sh ] && ! head -1 today.sh | grep -q '^#!' && echo 'The first line of today.sh should be the shebang: #!/bin/sh'; [ -e today.sh ] && [ ! -x today.sh ] && echo 'today.sh is not executable yet: chmod +x today.sh'; grep -qi 'permission denied' \"$OUT\" && echo 'Permission denied means the execute bit is missing: chmod +x today.sh'; [ -x today.sh ] && ! grep -q '^Today is' \"$OUT\" && echo 'The script exists and is executable; now run it: ./today.sh'" },
+
+    { "args", RUN, "Scripts", "Arguments: $1, $2, $#",
+      "Words typed after a script's name reach it as arguments. Inside the script\n"
+      "  $1 is the first argument, $2 the second, and so on;\n"
+      "  $# is how many there are; \"$@\" is all of them.\n"
+      "So sh greet.sh Ann Bob runs greet.sh with $1=Ann and $2=Bob. The one-line\n"
+      "way to write a short script: printf '#!/bin/sh\\necho ...\\n' > FILE.",
+      "Write hello.sh so that it prints Hello, NAME! where NAME is its first argument. Run it with the argument World.",
+      "grep -qx 'Hello, World!' \"$OUT\" && grep -q '\\$1' hello.sh",
+      "In the script: echo \"Hello, $1!\"  Then run it with World after its name.",
+      "printf '#!/bin/sh\\necho \"Hello, $1!\"\\n' > hello.sh; sh hello.sh World", NULL,
+      "grep -q 'Hello from a script' \"$OUT\" && echo 'That is the old hello.sh from the fixtures; overwrite it with your own.'; [ -e hello.sh ] && ! grep -q '\\$1' hello.sh && echo 'The script never looks at $1, so the name cannot get in.'; grep -q '^Hello, !$' \"$OUT\" && echo 'Hello, ! means $1 was empty: put World after the script name when you run it.'" },
+
+    { "read", RUN, "Scripts", "Asking for input",
+      "  read NAME waits for a line of input and stores it in the variable NAME.\n"
+      "Print the question first, then read:\n"
+      "  printf 'Your age? '\n"
+      "  read age\n"
+      "  echo \"$age, noted.\"\n"
+      "At this prompt nothing can type into a running command, so supply the\n"
+      "answer through a pipe: echo 42 | ./ask.sh feeds 42 to the read.",
+      "Write ask.sh that asks for a name, reads it and prints: Nice to meet you, NAME. Run it with the name Ada supplied through a pipe.",
+      "grep -q 'Nice to meet you, Ada\\.' \"$OUT\" && grep -q 'read' ask.sh",
+      "In the script: read name, then echo \"Nice to meet you, $name.\"  Run: echo Ada | sh ask.sh",
+      "cat > ask.sh <<'EOF'\n#!/bin/sh\nprintf 'What is your name? '\nread name\necho \"Nice to meet you, $name.\"\nEOF\necho Ada | sh ask.sh", NULL,
+      "[ -e ask.sh ] || echo 'No ask.sh yet.'; [ -e ask.sh ] && grep -q read ask.sh && [ ! -s \"$OUT\" ] && echo 'ask.sh is written. Now run it with the name piped in: echo Ada | sh ask.sh'; [ -e ask.sh ] && ! grep -q read ask.sh && echo 'The script needs a read command to take the answer in.'; grep -q 'Nice to meet you, \\.' \"$OUT\" && echo 'The name came out empty: nothing was piped in. Run it as echo Ada | sh ask.sh'" },
+
+    { "if", RUN, "Scripts", "if, then, else",
+      "  if COMMAND; then\n"
+      "    ...commands for yes...\n"
+      "  else\n"
+      "    ...commands for no...\n"
+      "  fi\n"
+      "if runs COMMAND and looks at its exit status: 0 means yes. The usual\n"
+      "command to test things is [ (a real command, so it needs spaces around\n"
+      "everything inside, and a closing ]):\n"
+      "  [ -f FILE ] FILE exists and is a file; [ -d FILE ] it is a directory\n"
+      "  [ \"$a\" = \"$b\" ] the two texts are the same; != different\n"
+      "  [ -z \"$a\" ] $a is empty\n"
+      "The else part is optional. Indentation is only for reading.",
+      "Write check.sh that prints found if a file called notes.txt exists in the current directory, and missing otherwise. Run it.",
+      "grep -qx found \"$OUT\" && grep -q 'if ' check.sh && grep -q 'else' check.sh && grep -q 'fi' check.sh",
+      "if [ -f notes.txt ]; then echo found; else echo missing; fi",
+      "cat > check.sh <<'EOF'\n#!/bin/sh\nif [ -f notes.txt ]; then\n  echo found\nelse\n  echo missing\nfi\nEOF\nsh check.sh", NULL,
+      "[ -e check.sh ] && [ ! -s \"$OUT\" ] && echo 'check.sh is written; now run it: sh check.sh'; grep -q 'missing argument\\|unary operator\\|\\[: ' \"$OUT\" && echo 'A [ error: check the spaces. [ -f notes.txt ] needs a space after [ and before ].'; grep -q 'syntax error' \"$OUT\" && echo 'A syntax error: the shape is if ...; then ... else ... fi, and fi is required.'; grep -qx missing \"$OUT\" && echo 'It said missing, but notes.txt is here: the test should be -f notes.txt'" },
+
+    { "tests", QUIZ, "Scripts", "Comparing numbers",
+      "[ compares text with = and !=. Numbers have their own operators, because\n"
+      "as text \"9\" sorts after \"10\":\n"
+      "  -eq equal, -ne not equal, -lt less than, -le at most, -gt, -ge.\n"
+      "Never use < or > inside [ ]: to the shell those are redirections, so\n"
+      "[ $n < 10 ] tries to read a file called 10.",
+      "You want to test whether $n is less than 10. Which line is right?",
+      "b",
+      "< is a redirection, even inside [ ].",
+      "-lt is \"less than\" for numbers. The quotes around \"$n\" keep [ from breaking when n is empty.",
+      "a) if [ $n < 10 ]; then\nb) if [ \"$n\" -lt 10 ]; then\nc) if [ \"$n\" lt 10 ]; then\nd) if $n < 10; then", NULL },
+
+    { "arith", RUN, "Scripts", "Arithmetic",
+      "The shell treats everything as text; to calculate, wrap the expression in\n"
+      "$(( )): $((3 * 4)) becomes 12. It knows + - * / and %, and variables\n"
+      "inside it need no $: n=5; echo $((n + 1)) prints 6. Whole numbers only.",
+      "Print the sum of 17 and 25 using shell arithmetic.",
+      "grep -qx 42 \"$OUT\" && [[ \"$CMD\" == *'$(('* ]]",
+      "echo $((...))",
+      "echo $((17 + 25))", NULL,
+      "grep -q '17 + 25\\|17+25' \"$OUT\" && echo 'The expression was printed, not computed: it has to be inside $(( )).'" },
+
+    { "while-read", RUN, "Scripts", "A loop over lines",
+      "You know for FILE in *; do ...; done. To loop over the lines of a file:\n"
+      "  while read line; do\n"
+      "    echo \"got: $line\"\n"
+      "  done < FILE\n"
+      "read takes one line per turn and fails at the end of the file, which ends\n"
+      "the loop. The < FILE at the end feeds the whole loop.",
+      "Print each line of fruits.txt with fruit: in front (fruit: apple, and so on), using a while read loop.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf 'fruit: apple\\nfruit: banana\\nfruit: cherry')\" ] && [[ \"$CMD\" == *while* ]]",
+      "while read f; do echo \"fruit: $f\"; done < fruits.txt",
+      "while read f; do echo \"fruit: $f\"; done < fruits.txt", NULL,
+      "[[ \"$CMD\" == *while* ]] || echo 'This one wants a while read loop.'; [[ \"$CMD\" == *'<'* ]] || echo 'Nothing was fed into the loop: put < fruits.txt after done.'" },
+
+    { "functions", RUN, "Scripts", "Functions",
+      "A function is a named block of commands, defined once and called like a\n"
+      "command:\n"
+      "  hello() { echo \"hello, $1\"; }\n"
+      "  hello world\n"
+      "Inside, $1 $2... are the function's own arguments. The braces need a space\n"
+      "after { and a ; before } when it is all on one line.",
+      "Define a function shout that prints its first argument in capital letters, then call it with the word hello.",
+      "grep -qx HELLO \"$OUT\" && [[ \"$CMD\" == *'()'* ]]",
+      "shout() { echo \"$1\" | tr a-z A-Z; }; shout hello",
+      "shout() { echo \"$1\" | tr a-z A-Z; }; shout hello", NULL,
+      "[[ \"$CMD\" == *'()'* ]] || echo 'Define a function first: name() { ...; }'; grep -qx hello \"$OUT\" && echo 'It printed in lower case: pipe the text through tr a-z A-Z.'; grep -q 'parse error\\|syntax error' \"$OUT\" && echo 'Check the braces: a space after { and a ; before }.'" },
+
+    { "exit", RUN, "Scripts", "Exit status from a script",
+      "A script ends with the status of its last command, or with exit N to say\n"
+      "so explicitly: exit 0 for success, anything else for failure. Right after\n"
+      "a command, $? holds its exit status. And set -e at the top of a script\n"
+      "makes it stop at the first command that fails, instead of blundering on.",
+      "Write fail.sh that prints oops and exits with status 3. Run it, then print the status it returned.",
+      "grep -qx oops \"$OUT\" && grep -qx 3 \"$OUT\" && grep -q 'exit 3' fail.sh",
+      "In the script: echo oops, then exit 3. After running it: echo $?",
+      "printf '#!/bin/sh\\necho oops\\nexit 3\\n' > fail.sh; sh fail.sh; echo $?", NULL,
+      "[ -e fail.sh ] && ! grep -q 'exit 3' fail.sh && echo 'fail.sh needs an exit 3 line.'; grep -qx oops \"$OUT\" && ! grep -qx 3 \"$OUT\" && echo 'Now print the status: echo $? right after running the script, on the same line.'" },
+
+    { "case", RUN, "Scripts", "case: many branches",
+      "For one value with several possible forms, case is tidier than a chain\n"
+      "of ifs:\n"
+      "  case \"$1\" in\n"
+      "    start|go) echo starting ;;\n"
+      "    stop)     echo stopping ;;\n"
+      "    *)        echo \"unknown: $1\" ;;\n"
+      "  esac\n"
+      "Each branch is a pattern (| separates alternatives, * matches anything),\n"
+      "a ), the commands, and ;; to end it.",
+      "Write yn.sh that prints yes for the argument y or yes, no for n or no, and what? for anything else, using case. Run it with the argument y.",
+      "grep -qx yes \"$OUT\" && grep -q 'case' yn.sh && grep -q 'esac' yn.sh",
+      "case \"$1\" in y|yes) ... ;; n|no) ... ;; *) ... ;; esac",
+      "cat > yn.sh <<'EOF'\n#!/bin/sh\ncase \"$1\" in\n  y|yes) echo yes ;;\n  n|no)  echo no ;;\n  *)     echo 'what?' ;;\nesac\nEOF\nsh yn.sh y", NULL,
+      "[ -e yn.sh ] && [ ! -s \"$OUT\" ] && echo 'yn.sh is written; now run it with y as the argument: sh yn.sh y'; [ -e yn.sh ] && ! grep -q esac yn.sh && echo 'case ends with esac (case backwards).'; grep -q 'syntax error' \"$OUT\" && echo 'Each branch is PATTERN) commands ;;'; grep -qx 'what?' \"$OUT\" && echo 'It fell through to *: the y branch did not match. Was the argument y, and is the branch y|yes)?'" },
+
+    /* ----- Your shell setup ----- */
+
+    { "export", RUN, "Your shell setup", "Environment variables",
+      "A variable set with NAME=value belongs to this shell only. Programs the\n"
+      "shell starts get a copy of the environment: the variables marked with\n"
+      "export. HOME, USER and PATH are environment variables; env lists them all.\n"
+      "  export NAME=value sets and exports in one go.\n"
+      "By convention environment variables are UPPER CASE.",
+      "Set GREETING to hello and export it, then run sh -c 'echo $GREETING' to show a child program sees it.",
+      "grep -qx hello \"$OUT\" && [[ \"$CMD\" == *export* ]]",
+      "export GREETING=hello; then the sh -c command from the task.",
+      "export GREETING=hello; sh -c 'echo $GREETING'", NULL,
+      "[[ \"$CMD\" == *export* ]] || echo 'Without export the child sh gets no GREETING, so it prints an empty line.'" },
+
+    { "path", RUN, "Your shell setup", "PATH: where commands are found",
+      "When you type a command name, the shell looks for a program of that name\n"
+      "in each folder listed in PATH, in order, separated by colons:\n"
+      "  echo $PATH\n"
+      "That is why ./script.sh needs the ./ (the current folder is not in PATH)\n"
+      "and why your own commands live in a folder such as ~/bin: add it to the\n"
+      "front and they run by name from anywhere:\n"
+      "  PATH=\"$HOME/bin:$PATH\"\n"
+      "Here there is a bin folder with an executable called hi inside.",
+      "Put this folder's bin at the front of PATH, then run hi by its name alone.",
+      "grep -q 'hi from bin' \"$OUT\" && [[ \"$CMD\" == *PATH* ]] && [[ \"$CMD\" != *'bin/hi'* ]]",
+      "PATH=\"$PWD/bin:$PATH\"; hi",
+      "PATH=\"$PWD/bin:$PATH\"; hi", NULL,
+      "[[ \"$CMD\" == *'bin/hi'* ]] && echo 'That runs it by path. The point is to run plain hi, after putting bin in PATH.'; grep -q 'command not found' \"$OUT\" && echo 'hi was not found: PATH must contain the bin folder here, e.g. PATH=\"$PWD/bin:$PATH\", on the same line since each line is a fresh shell.'" },
+
+    { "alias", RUN, "Your shell setup", "Aliases",
+      "An alias is a short name for a longer command:\n"
+      "  alias ll='ls -la'\n"
+      "From the next line on, ll runs ls -la. Not on the same line: the shell\n"
+      "reads a whole line before it looks up aliases, so an alias defined and used\n"
+      "on one line is not found yet. alias on its own lists the aliases you have.\n"
+      "Since each line here is a fresh shell, confirm it with the list instead.",
+      "Make an alias ll for ls -la, then show the list of aliases to confirm it is there.",
+      "[[ \"$CMD\" == *'alias ll='* ]] && grep -q \"ll=\" \"$OUT\"",
+      "alias ll='ls -la'; alias",
+      "alias ll='ls -la'; alias", NULL,
+      "[[ \"$CMD\" == *'alias ll='* ]] || echo 'Start with alias ll=...'; grep -q 'command not found: ll' \"$OUT\" && echo 'As the lesson says, ll is not known on the line that defines it. Show the alias list instead: alias'; [[ \"$CMD\" == *'alias ll='* ]] && [ ! -s \"$OUT\" ] && echo 'The alias was defined but nothing was printed: add ; alias to list them.'" },
+
+    { "zshrc", QUIZ, "Your shell setup", "Making it stick: ~/.zshrc",
+      "Aliases, PATH changes and exported variables vanish with the shell that\n"
+      "made them. To have them in every terminal, put the same lines into the\n"
+      "file ~/.zshrc: zsh reads it every time a new interactive shell starts.\n"
+      "(bash uses ~/.bashrc.) A shell that is already open does not notice the\n"
+      "change; run source ~/.zshrc in it, or open a new terminal window.",
+      "You add alias ll='ls -la' to ~/.zshrc, but the terminal window you already have open says: command not found: ll. Why?",
+      "b",
+      "When is ~/.zshrc read?",
+      "~/.zshrc is read once, when a shell starts. This shell started before the line was added. source ~/.zshrc reads it now; new windows get it automatically.",
+      "a) aliases cannot go in ~/.zshrc\nb) the file is read when a shell starts, and this one started earlier: run source ~/.zshrc or open a new window\nc) the Mac must be restarted\nd) ~/.zshrc is only for PATH", NULL },
+
+    { "history", QUIZ, "Your shell setup", "Getting commands back",
+      "The shell remembers what you typed. The up arrow walks back through it,\n"
+      "history prints the list, !! repeats the last command (sudo !! is a common\n"
+      "use), and Ctrl-R searches: press it, type part of an old command, and the\n"
+      "matching line appears; press Enter to run it, Ctrl-R again for older matches.",
+      "You ran a long command ten minutes ago and want it back without retyping it. The quickest way?",
+      "a",
+      "Search, don't scroll.",
+      "Ctrl-R searches backwards through your history as you type. The other three work but take longer.",
+      "a) press Ctrl-R and type a few letters from it\nb) open ~/.zsh_history in an editor\nc) press the up arrow until it appears\nd) type it again", NULL },
+
+    /* ----- Permissions ----- */
+
+    { "ls-l-perms", QUIZ, "Permissions", "Reading the permission letters",
+      "The first column of ls -l, such as -rwxr-x---, is ten characters: the\n"
+      "file type (- file, d directory, l link) and then three groups of three:\n"
+      "  rwx  for the owner (you, for your files)\n"
+      "  r-x  for the file's group\n"
+      "  ---  for everyone else\n"
+      "r read, w write (change or delete), x execute (run it; for a directory,\n"
+      "enter it). A - means that right is missing.",
+      "A file shows -rwxr-x---. Who can run it?",
+      "b",
+      "Three groups: owner, group, others.",
+      "Owner has rwx, the group has r-x (x included), others have nothing at all, not even read.",
+      "a) everyone\nb) the owner and members of the file's group\nc) only the owner\nd) nobody, it is a directory", NULL },
+
+    { "chmod", RUN, "Permissions", "Changing permissions",
+      "chmod changes those letters. Two spellings:\n"
+      "  chmod u+x FILE adds (+) execute (x) for the user/owner (u); g is group,\n"
+      "  o others, a all. chmod go-w FILE removes write from group and others.\n"
+      "  chmod 644 FILE sets all three at once with a digit each: r=4, w=2, x=1,\n"
+      "  added up. 6 is rw-, 4 is r--, 7 is rwx, 0 is ---. So 644 is rw-r--r--,\n"
+      "  755 is rwxr-xr-x.\n"
+      "Here private.txt is readable by everyone.",
+      "Make private.txt readable and writable by you, and not accessible to anyone else.",
+      "[ \"$(stat -f %Lp private.txt 2>/dev/null || stat -c %a private.txt)\" = 600 ]",
+      "rw for you is 6, nothing for group and others is 0 0. Or chmod go-rw.",
+      "chmod 600 private.txt", NULL,
+      "m=$(stat -f %Lp private.txt 2>/dev/null || stat -c %a private.txt); [ \"$m\" = 644 ] && echo 'Unchanged (644): group and others can still read it.'; [ \"$m\" != 644 ] && [ \"$m\" != 600 ] && echo \"It is now $m; the target is 600: rw for you, nothing for the rest.\"" },
+
+    { "sudo", QUIZ, "Permissions", "sudo",
+      "Some files belong to the system, not to you, and some actions (installing\n"
+      "software system-wide, changing settings under /etc) need the administrator.\n"
+      "sudo COMMAND runs COMMAND as the administrator after asking for your\n"
+      "password. It removes every safety net, so it is for the specific cases that\n"
+      "need it, never a reflex to make an error go away.",
+      "When is putting sudo in front of a command the right move?",
+      "b",
+      "Understand first, escalate second.",
+      "Permission denied on a system file, and you know why it needs system-level rights: that is sudo's job. On your own files it is never needed; a permission problem there means chmod, not sudo.",
+      "a) whenever a command prints an error, to be safe\nb) when a command needs system-level access and you understand why\nc) never; it is disabled on a Mac\nd) for any command that changes a file", NULL },
+
+    /* ----- Patterns: regex, sed, awk ----- */
+
+    { "regex", RUN, "Patterns", "Regular expressions",
+      "grep's search text is a regular expression (regex): a pattern where a few\n"
+      "characters have a meaning of their own.\n"
+      "  .      any one character          ^      the start of the line\n"
+      "  *      the previous thing, repeated any number of times (also zero)\n"
+      "  $      the end of the line         [abc]  one of a, b or c; [0-9] a digit\n"
+      "So 'b.t' matches bat and bit, '^b' lines that start with b, 't$' lines\n"
+      "ending in t, '^[0-9]' lines starting with a digit. Put the pattern in\n"
+      "single quotes so the shell leaves it alone. words.txt is the file to try on.",
+      "Print the lines of words.txt that start with ca.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf 'cat\\ncar\\ncart')\" ]",
+      "^ anchors the pattern to the start.",
+      "grep '^ca' words.txt", NULL,
+      "grep -q '^batch$' \"$OUT\" && echo 'batch came through: it contains ca but does not start with it. Anchor the pattern with ^.'; [ -s \"$OUT\" ] || echo 'Nothing matched.'" },
+
+    { "grep-E", RUN, "Patterns", "Extended patterns",
+      "grep -E turns on a few more operators:\n"
+      "  +   the previous thing, one or more times    ?   optional\n"
+      "  |   either side                              ( ) group\n"
+      "  {3} exactly three times\n"
+      "For instance '^[0-9]+$' is a line made only of digits, one or more;\n"
+      "'cat|dog' is a line with either; '^ca(t|r)$' is exactly cat or car.",
+      "Print the lines of words.txt that consist of digits only.",
+      "[ \"$(cat \"$OUT\")\" = 2024 ]",
+      "Start of line, a digit repeated one or more times, end of line. Needs -E.",
+      "grep -E '^[0-9]+$' words.txt", NULL,
+      "grep -q abc123 \"$OUT\" && echo 'abc123 came through: anchor both ends, ^ and $, so letters cannot sneak in.'; [ -s \"$OUT\" ] || echo 'Nothing matched. Without -E, + is an ordinary character; with -E it means one or more.'" },
+
+    { "sed-s", RUN, "Patterns", "sed: replace text",
+      "sed reads lines, applies an editing command and prints the result. The\n"
+      "one everybody uses is substitute:\n"
+      "  sed 's/OLD/NEW/' FILE replaces the first OLD on each line with NEW.\n"
+      "  sed 's/OLD/NEW/g' FILE replaces every one (g for global).\n"
+      "OLD is a regular expression. The file itself is not changed; the result\n"
+      "is printed. letter.txt is a form letter with NAME and NUMBER to fill in.",
+      "Print letter.txt with every NAME replaced by Grace. Leave the file itself as it is.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf 'Dear Grace,\\nYour order NUMBER has shipped.\\nThanks again, Grace')\" ] && grep -q '^Dear NAME,' letter.txt",
+      "sed 's/NAME/Grace/g' letter.txt",
+      "sed 's/NAME/Grace/g' letter.txt", NULL,
+      "[ -e letter.txt ] || echo 'letter.txt is gone: type reset for a fresh copy.'; [ -e letter.txt ] && ! grep -q '^Dear NAME,' letter.txt && echo 'The file itself was changed; this task only prints the replaced text. Type reset for a fresh copy.'; grep -q 'Thanks again, NAME' \"$OUT\" && echo 'The second NAME on the last line survived: add g after the last / to replace all of them.'" },
+
+    { "sed-i", RUN, "Patterns", "sed: change the file itself",
+      "To edit the file in place instead of printing, add -i. On a Mac the\n"
+      "option needs an argument, the suffix for a backup copy, and '' means no\n"
+      "backup:\n"
+      "  sed -i '' 's/OLD/NEW/' FILE     (macOS)\n"
+      "  sed -i 's/OLD/NEW/' FILE        (Linux)\n"
+      "Test the substitution without -i first; there is no undo.",
+      "Change NUMBER to 42 inside letter.txt itself.",
+      "grep -q 'order 42 has' letter.txt",
+      "The same s command as before, with -i '' in front of it.",
+      "sed -i '' 's/NUMBER/42/' letter.txt", NULL,
+      "grep -q 'order 42 has' \"$OUT\" && echo 'The result was printed but letter.txt is unchanged: that needs -i.'; grep -q 'invalid command code\\|extra characters' \"$OUT\" && echo \"On a Mac -i needs its backup-suffix argument: sed -i '' ...\"" },
+
+    { "sed-lines", RUN, "Patterns", "sed: pick or drop lines",
+      "sed can also select lines. -n stops the automatic printing; p prints:\n"
+      "  sed -n '2p' FILE      only line 2\n"
+      "  sed -n '3,5p' FILE    lines 3 to 5\n"
+      "  sed '1d' FILE         everything except line 1 (d deletes)\n"
+      "  sed '/draft/d' FILE   drop the lines matching a pattern",
+      "Using sed, print only lines 3 to 5 of numbers.txt.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf '3\\n4\\n5')\" ] && [[ \"$CMD\" == *sed* ]]",
+      "-n with a range and p.",
+      "sed -n '3,5p' numbers.txt", NULL,
+      "[[ \"$CMD\" == *sed* ]] || echo 'This one wants sed (head and tail could do it too).'; [ \"$(wc -l < \"$OUT\")\" -gt 3 ] && echo 'Too many lines: without -n, sed prints every line and then the selected ones again.'" },
+
+    { "awk", RUN, "Patterns", "awk: columns and sums",
+      "awk reads each line, splits it into fields ($1, $2, ... and $NF for the\n"
+      "last), and runs a small program on it:\n"
+      "  awk '{ print $2 }' FILE           second column of every line\n"
+      "  awk -F, '{ print $1 }' FILE       fields separated by commas\n"
+      "  awk '{ total += $1 } END { print total }' FILE\n"
+      "The END block runs once after the last line: the place to print a total.\n"
+      "scores.txt has one number per line.",
+      "Print the sum of the numbers in scores.txt, using awk.",
+      "grep -qx 165 \"$OUT\" && [[ \"$CMD\" == *awk* ]]",
+      "Add $1 to a variable on every line; print it in END.",
+      "awk '{ total += $1 } END { print total }' scores.txt", NULL,
+      "[[ \"$CMD\" == *awk* ]] || echo 'This one wants awk.'; [ \"$(wc -l < \"$OUT\")\" -gt 1 ] && echo 'A number per line came out: the print belongs in the END block, so it runs once at the end.'" },
+
+    /* ----- Processes ----- */
+
+    { "kill", RUN, "Processes", "Finding and stopping a process",
+      "Every running program is a process with a number, its PID.\n"
+      "  ps aux lists them all; ps aux | grep NAME finds one.\n"
+      "  pgrep NAME prints just the PIDs of matching processes.\n"
+      "  kill PID asks a process to quit.\n"
+      "After starting something in the background with &, $! is its PID.",
+      "Start sleep 300 in the background, then stop it with kill, using its PID.",
+      "[[ \"$CMD\" == *kill* ]] && [[ \"$CMD\" == *'&'* ]] && ! pgrep -f 'sleep 300' >/dev/null",
+      "sleep 300 & then kill $!",
+      "sleep 300 & kill $!", NULL,
+      "[[ \"$CMD\" == *'&'* ]] || echo 'Start the sleep in the background with & first, on the same line.'; [[ \"$CMD\" == *kill* ]] || echo 'Now kill it: kill $! uses the PID of the last background command.'" },
+
+    { "signals", QUIZ, "Processes", "Signals",
+      "kill sends a signal. The default, TERM, is a polite request to quit, which\n"
+      "a program may handle (save its work) or ignore. Ctrl-C sends INT, similar.\n"
+      "  kill -9 PID sends KILL, which cannot be caught or ignored: the process\n"
+      "is gone at once, without cleaning up. Use it only when TERM did nothing.",
+      "kill 1234 did nothing; the program is still there a minute later. What now?",
+      "a",
+      "Escalate.",
+      "kill -9 is the one signal a stuck program cannot ignore. It is the last resort because the program gets no chance to save or clean up.",
+      "a) kill -9 1234\nb) kill 1234 again, a few times\nc) restart the computer\nd) kill -0 1234", NULL },
+
+    /* ----- Handy tools ----- */
+
+    { "both-streams", RUN, "Handy tools", "Both streams into one file",
+      "You know > for normal output and 2> for errors. To send both to the same\n"
+      "place, redirect output, then send stream 2 to where stream 1 goes:\n"
+      "  COMMAND > FILE 2>&1\n"
+      "The order matters: 2>&1 means \"2 goes where 1 goes now\", so it comes\n"
+      "after > FILE. This is how you capture everything a command says.",
+      "Run ls nope docs so that both its listing and its error message end up in all.txt.",
+      "grep -q 'No such file' all.txt && grep -q 'readme.md' all.txt && [ ! -s \"$OUT\" ]",
+      "> all.txt and then 2>&1, in that order.",
+      "ls nope docs > all.txt 2>&1", NULL,
+      "[ -e all.txt ] || echo 'No all.txt was made.'; [ -e all.txt ] && ! grep -q 'No such file' all.txt && echo 'The error message did not go into the file: add 2>&1 after > all.txt'; [ -e all.txt ] && ! grep -q readme.md all.txt && echo 'The listing did not go into the file: that is > all.txt'; [ -s \"$OUT\" ] && grep -q 'No such' \"$OUT\" && echo 'The error still showed on screen: 2>&1 must come after > all.txt, not before.'" },
+
+    { "diff", RUN, "Handy tools", "Comparing two files",
+      "  diff OLD NEW shows the lines that differ: < lines are from the first\n"
+      "file, > lines from the second, with the line numbers in between. No\n"
+      "output means the files are identical. diff -u is the unified format\n"
+      "that git and code reviews use (- and + lines). v1.txt and v2.txt are\n"
+      "two versions of the same text.",
+      "Show the differences between v1.txt and v2.txt.",
+      "[[ \"$CMD\" == *diff* ]] && grep -q 'cherry\\|orange' \"$OUT\"",
+      "diff, then the two file names.",
+      "diff v1.txt v2.txt", NULL,
+      "[[ \"$CMD\" == *diff* ]] || echo 'The command is diff.'" },
+
+    { "du", RUN, "Handy tools", "Disk space",
+      "  du -sh FOLDER  the size of a folder and everything in it (s: one\n"
+      "                 summary line, h: human units like 4.0K, 12M, 1.5G)\n"
+      "  du -sh *       one line per item in the current folder\n"
+      "  df -h          how full each disk is",
+      "Show how much space the docs folder takes, as a single human-readable line.",
+      "[[ \"$CMD\" == *du* ]] && [ \"$(wc -l < \"$OUT\")\" -eq 1 ] && grep -q docs \"$OUT\"",
+      "du with -s and -h, then the folder.",
+      "du -sh docs", NULL,
+      "[[ \"$CMD\" == *du* ]] || echo 'The command is du.'; [ \"$(wc -l < \"$OUT\")\" -gt 1 ] && echo 'Several lines came out: -s gives one summary line.'" },
+
+    { "date", RUN, "Handy tools", "Dates in the shape you want",
+      "date prints the current date and time. Give it a format, after a +, to\n"
+      "choose the shape: %Y year, %m month, %d day, %H hours, %M minutes.\n"
+      "  date +%Y-%m-%d       2026-09-20\n"
+      "  date +%H:%M          14:05\n"
+      "%F is short for %Y-%m-%d. Handy in file names: backup-$(date +%F).tar",
+      "Print today's date as year-month-day, with the numbers separated by dashes.",
+      "grep -qx \"$(date +%F)\" \"$OUT\"",
+      "date +%Y-%m-%d",
+      "date +%Y-%m-%d", NULL,
+      "grep -q '^[A-Z][a-z][a-z] ' \"$OUT\" && echo 'That is the default format; give date a +FORMAT.'" },
+
+    { "ssh", QUIZ, "Handy tools", "Other computers: ssh and scp",
+      "  ssh USER@HOST opens a shell on another computer; everything you know\n"
+      "works there. exit comes back.\n"
+      "  scp FILE USER@HOST:PATH copies a file there; swap the two to copy\n"
+      "back. The colon separates the machine from the path on it; a colon with\n"
+      "nothing after it means the home folder.",
+      "Copy report.pdf from this Mac into the home folder of user ann on the machine box.example.com. Which command?",
+      "a",
+      "scp, source first, then destination with a colon.",
+      "scp copies; the source comes first; the destination is user@host: with the path after the colon, and nothing after the colon means home.",
+      "a) scp report.pdf ann@box.example.com:\nb) ssh report.pdf ann@box.example.com\nc) cp report.pdf ann@box.example.com\nd) scp ann@box.example.com: report.pdf", NULL },
+};
+
+#define MAX_LESSONS 64
+static const Lesson *LESSONS = BASIC;
+static int LESSON_COUNT = (int)(sizeof BASIC / sizeof BASIC[0]);
+static int advanced;   /* --advanced: the second lesson set, with its own progress file */
 
 /* Files every RUN lesson starts with. Runs in a fresh scratch directory. */
 static const char *FIXTURES =
@@ -630,7 +1110,13 @@ static const char *FIXTURES =
     "printf 'draft\\n' > docs/draft.txt\n"
     "printf 'ada,lovelace,1815\\nalan,turing,1912\\ngrace,hopper,1906\\n' > people.csv\n"
     "printf '42\\n7\\n97\\n10\\n9\\n' > scores.txt\n"
-    "mkdir -p logs && printf 'a\\n' > logs/a.log && printf 'b\\n' > logs/b.log\n";
+    "mkdir -p logs && printf 'a\\n' > logs/a.log && printf 'b\\n' > logs/b.log\n"
+    /* used by the advanced tier */
+    "mkdir -p bin && printf '#!/bin/sh\\necho hi from bin\\n' > bin/hi && chmod +x bin/hi\n"
+    "printf 'nothing to see\\n' > private.txt && chmod 644 private.txt\n"
+    "printf 'cat\\ncar\\ncart\\nbat\\nbatch\\ndog\\nabc123\\n2024\\n' > words.txt\n"
+    "printf 'Dear NAME,\\nYour order NUMBER has shipped.\\nThanks again, NAME\\n' > letter.txt\n"
+    "printf 'apple\\nbanana\\ncherry\\n' > v1.txt && printf 'apple\\nbanana\\norange\\n' > v2.txt\n";
 
 /* ---------- terminal helpers ---------- */
 
@@ -803,12 +1289,12 @@ static void show_output(int status) {
 /* ---------- progress ---------- */
 
 static char progress_path[PATH_MAX];
-static int done[LESSON_COUNT];
+static int done[MAX_LESSONS];
 
 static void load_progress(void) {
     const char *home = getenv("HOME");
     if (!home) home = ".";
-    snprintf(progress_path, sizeof progress_path, "%s/.shell-tutor/progress", home);
+    snprintf(progress_path, sizeof progress_path, "%s/.shell-tutor/%s", home, advanced ? "progress-advanced" : "progress");
     FILE *f = fopen(progress_path, "r");
     if (!f) return;
     char line[128];
@@ -855,9 +1341,53 @@ static void print_task(const Lesson *l) {
 
 static void print_prompt_help(int kind) {
     if (kind == RUN)
-        printf("%sType a command, or: hint, idk (show the answer), skip, list, quit%s\n", DIM, RESET);
+        printf("%sType a command, or: hint, idk (show the answer), %sskip, list, quit%s\n", DIM, advanced ? "reset (fresh files), " : "", RESET);
     else
         printf("%sType a letter, or: hint, idk (show the answer), skip, list, quit%s\n", DIM, RESET);
+}
+
+/* Reads a raw line without trimming (here-document bodies keep their indentation). */
+static char *read_raw_line(const char *prompt, char *buf, size_t size) {
+    fputs(prompt, stdout);
+    fflush(stdout);
+    if (!fgets(buf, (int)size, stdin)) { putchar('\n'); return NULL; }
+    buf[strcspn(buf, "\n")] = '\0';
+    return buf;
+}
+
+/*
+ * Reads one command, which may span lines: a line ending in \ continues on
+ * the next, and a here-document (<<WORD, <<'WORD' or <<-WORD) runs until
+ * WORD alone on a line. The prompt for the extra lines is "> ", like zsh's.
+ */
+static char *read_command(char *buf, size_t size) {
+    char line[2048];
+    char *first = read_line("$ ", line, sizeof line);
+    if (!first) return NULL;
+    snprintf(buf, size, "%s", first);
+    char terminator[64] = "";
+    const char *h = strstr(buf, "<<");
+    if (h) {
+        h += 2;
+        if (*h == '-') h++;
+        while (*h == ' ') h++;
+        if (*h == '\'' || *h == '"') h++;
+        size_t n = 0;
+        while ((isalnum((unsigned char)h[n]) || h[n] == '_') && n < sizeof terminator - 1) { terminator[n] = h[n]; n++; }
+        terminator[n] = '\0';
+    }
+    for (;;) {
+        size_t len = strlen(buf);
+        int continued = len > 0 && buf[len - 1] == '\\';
+        if (!continued && !*terminator) break;
+        char *more = read_raw_line("> ", line, sizeof line);
+        if (!more) return NULL;
+        if (len + strlen(more) + 2 >= size) { printf("That command is too long.\n"); return buf; }
+        buf[len] = '\n';
+        strcpy(buf + len + 1, more);
+        if (*terminator && strcmp(trim(more), terminator) == 0) terminator[0] = '\0';
+    }
+    return buf;
 }
 
 /* "I don't know" in its usual spellings, plus the older `answer`. */
@@ -893,6 +1423,7 @@ static int meta_command(const char *input, const Lesson *l, int i, int *result) 
     if (strcmp(input, "hint") == 0) { printf("%sHint:%s %s\n", YELLOW, RESET, l->hint); return 2; }
     if (strcmp(input, "list") == 0) { list_lessons(i); return 2; }
     if (strcmp(input, "help") == 0) { print_prompt_help(l->kind); return 2; }
+    if (strcmp(input, "reset") == 0) { reset_work_dir(); printf("Fresh copy of the example files.\n"); return 2; }
     if (strncmp(input, "goto ", 5) == 0) {
         int n = atoi(input + 5);
         if (n >= 1 && n <= LESSON_COUNT) { jump_to = n - 1; *result = JUMP; return 1; }
@@ -925,11 +1456,11 @@ static int run_lesson(int i, int review) {
     reset_work_dir();
     print_task(l);
     print_prompt_help(RUN);
-    char buf[2048];
+    char buf[8192];
     int saw_answer = 0;   /* a pass after seeing the answer doesn't count; the lesson returns later */
     int tries = 0;
     for (;;) {
-        char *input = read_line("$ ", buf, sizeof buf);
+        char *input = read_command(buf, sizeof buf);
         if (!input) return QUIT;
         if (!*input) continue;
         int result, handled = meta_command(input, l, i, &result);
@@ -974,13 +1505,18 @@ static int run_lesson(int i, int review) {
         }
         printf("%sNot quite.%s\n", RED, RESET);
         explain_failure(l, input);
-        if (review && ++tries >= REVIEW_TRIES) {
+        if (review && ++tries >= (advanced ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
             printf("One way:  %s\nBack into the lessons it goes.\n", l->answer);
             forget(i);
             return NEXT;
         }
-        printf("Try again, or type hint.\n");
-        reset_work_dir();
+        if (advanced) {
+            /* Files stay as they are between tries: write the script, then run it. */
+            printf("Try again, or type hint. The files are as you left them; reset gives you fresh ones.\n");
+        } else {
+            printf("Try again, or type hint.\n");
+            reset_work_dir();
+        }
     }
 }
 
@@ -1091,12 +1627,20 @@ static void usage(void) {
          "  shell-tutor N        start at lesson N\n"
          "  shell-tutor --list   show the lessons and your progress\n"
          "  shell-tutor --reset  forget your progress\n"
+         "  shell-tutor --advanced [N | --list | --reset]\n"
+         "                       the second tier: scripts, regex, sed, awk, PATH, permissions...\n"
          "\n"
          "At the prompt: hint, idk (show the answer), skip, list, goto N, quit.");
 }
 
 int main(int argc, char **argv) {
     use_color = isatty(STDOUT_FILENO) && !getenv("NO_COLOR");
+    if (argc > 1 && strcmp(argv[1], "--advanced") == 0) {
+        advanced = 1;
+        LESSONS = ADVANCED;
+        LESSON_COUNT = (int)(sizeof ADVANCED / sizeof ADVANCED[0]);
+        argc--; argv++;
+    }
     load_progress();
 
     int start = -1;
@@ -1118,10 +1662,18 @@ int main(int argc, char **argv) {
     atexit(remove_scratch);
     signal(SIGINT, SIG_IGN);   /* Ctrl-C at the tutor prompt shouldn't kill the tutor; it still stops a running command */
 
-    printf("%s%sshell-tutor%s — commands run in a scratch folder (%s), never in your files.\n", BOLD, CYAN, RESET, work_dir);
+    printf("%s%sshell-tutor%s%s — commands run in a scratch folder (%s), never in your files.\n",
+           BOLD, CYAN, advanced ? " (advanced)" : "", RESET, work_dir);
     int any_done = 0;
     for (int k = 0; k < LESSON_COUNT; k++) any_done += done[k];
-    if (!any_done) {
+    if (!any_done && advanced) {
+        printf("\nThe second tier. It assumes the first course: paths, pipes, redirection, grep,\n"
+               "variables, wildcards. Two things are new at this prompt. A line ending in \\\n"
+               "continues on the next line, and a here-document (cat > file <<'EOF') keeps\n"
+               "reading until you type EOF alone on a line; that is how you will write scripts.\n"
+               "Files you make stay put between tries within a lesson (type reset for fresh ones),\n"
+               "so you can write a script with one command and run it with the next.\n");
+    } else if (!any_done) {
         printf("\nNew here? The shell is the program behind this window: you type a command,\n"
                "press Enter, and it runs it and shows the result. A command is a program's name,\n"
                "sometimes followed by options (like -l) and the files it should work on.\n"
@@ -1158,7 +1710,11 @@ int main(int argc, char **argv) {
         }
         if (pending == 0) {
             printf("\n%sThat's all %d lessons, reviewed and all. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
-            printf("Run   shell-tutor   again any time for another full review, or   shell-tutor --reset   to start from scratch.\n");
+            if (advanced)
+                printf("Run   shell-tutor --advanced   again any time for another full review, or   shell-tutor --advanced --reset   to start from scratch.\n");
+            else
+                printf("Run   shell-tutor   again any time for another full review, or   shell-tutor --reset   to start from scratch.\n"
+                       "Ready for more? There is a second tier:   shell-tutor --advanced\n");
             break;
         }
         printf("\n%sGoing back to the %d lesson%s you skipped or needed the answer for.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
@@ -1178,6 +1734,6 @@ int main(int argc, char **argv) {
 
     int finished = 0;
     for (int k = 0; k < LESSON_COUNT; k++) finished += done[k];
-    printf("%s%d of %d lessons done. Run shell-tutor again to continue.%s\n", DIM, finished, LESSON_COUNT, RESET);
+    printf("%s%d of %d lessons done. Run shell-tutor%s again to continue.%s\n", DIM, finished, LESSON_COUNT, advanced ? " --advanced" : "", RESET);
     return 0;
 }
