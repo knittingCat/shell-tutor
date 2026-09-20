@@ -148,7 +148,12 @@ static const Lesson LESSONS[] = {
       "  ~    your home folder (where your Desktop and Documents live)\n"
       "So  ~/docs  would be a docs folder in your home, not the one here.\n"
       "\n"
-      "Here, the docs folder contains a folder called guide.",
+      "Putting it to use. You know from lesson 2 that ls followed by a folder name\n"
+      "lists that folder:  ls docs  shows what is in docs. A path can go in the same\n"
+      "place, so  ls docs/guide  would list the guide folder that is inside docs. This\n"
+      "scratch folder has that: docs contains a folder called guide, and guide\n"
+      "contains one file. Note that  ls guide  would fail: there is no guide in the\n"
+      "folder you are in, only inside docs, so the path has to go through docs.",
       "List what is inside the guide folder, using a relative path from here.",
       "grep -q 'setup.md' \"$OUT\" && [[ \"$CMD\" == *docs/guide* ]]",
       "ls, then the path: docs, slash, guide.",
