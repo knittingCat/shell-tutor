@@ -200,6 +200,19 @@ static const Lesson LESSONS[] = {
       "tail -n 2 numbers.txt", NULL,
       "[[ \"$CMD\" == *head* ]] && echo 'head gives the START of the file; the last lines come from tail.'; n=$(wc -l < \"$OUT\"); [ \"$n\" -eq 2 ] || echo \"That printed $n lines, not 2: use -n 2.\"" },
 
+    { "tail-f", QUIZ, "Reading files", "Watching a file grow",
+      "  tail -f FILE   prints the last lines of FILE and then keeps waiting: every\n"
+      "time something is added to the file, the new lines appear at once. It is\n"
+      "the standard way to watch a log while a program writes to it. It never\n"
+      "finishes on its own, so your prompt doesn't come back until you stop it.\n"
+      "Ctrl-C stops whatever is running in the foreground.",
+      "You ran   tail -f app.log   and have seen enough. How do you get your prompt back?",
+      "b",
+      "The same key that stops any running command.",
+      "Ctrl-C ends tail. Typing q does nothing here: tail is not a pager like man, it\n"
+      "just keeps reading. Closing the window works too, but that's drastic.",
+      "a) press q\nb) press Ctrl-C\nc) wait for the file to stop growing\nd) type exit", NULL },
+
     { "mkdir", RUN, "Making and changing files", "Make a folder",
       "  mkdir NAME   creates a directory.\n"
       "  mkdir -p a/b/c   creates the whole chain at once.",
