@@ -164,9 +164,12 @@ static const Lesson LESSONS[] = {
       "[[ \"$CMD\" =~ '(^|[[:space:]])guide' ]] && echo 'guide is not in this folder; it is inside docs. The path goes through docs first: docs/guide'; "
       "grep -q 'readme.md' \"$OUT\" && [[ \"$CMD\" != *docs/guide* ]] && echo 'That is the docs folder itself. guide is one level further down: docs/guide'" },
 
-    { "cd", RUN, "Getting around", "Moving into a folder",
-      "  cd FOLDER changes the current directory to FOLDER (any path works:\n"
-      "            relative like docs, or absolute like /Users/ann).\n"
+    { "cd", RUN, "Getting around", "Going into a folder",
+      "So far you have looked into folders from outside. cd (change directory)\n"
+      "takes you inside one: it makes that folder your current directory, so from\n"
+      "then on relative paths start there. Nothing on disk moves, only you.\n"
+      "  cd FOLDER goes into FOLDER (any path works: relative like docs, or\n"
+      "            absolute like /Users/ann).\n"
       "  cd .. goes up one level. cd on its own goes to your home folder.\n"
       "Each line you type here runs in a fresh shell that is thrown away afterwards,\n"
       "so a cd on its own would be forgotten immediately. Use the ; from the lesson\n"
