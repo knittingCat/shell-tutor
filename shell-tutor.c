@@ -168,6 +168,7 @@ static const Lesson LESSONS[] = {
       "cd docs; pwd", NULL,
       "[[ \"$CMD\" == *'~'* ]] && echo '~ means your home folder, and the docs folder is not there: it is inside the folder you are in now, so its path is just   docs'; "
       "grep -qi 'no such file' \"$OUT\" && [[ \"$CMD\" != *'~'* ]] && echo 'That folder was not found: relative to here it is called docs, with no slash in front.'; "
+      "grep -qi 'not a directory' \"$OUT\" && echo 'cd can only go into a folder, and that path names a file. Stop at the folder: cd docs'; "
       "[[ \"$CMD\" == *cd* ]] || echo 'You never changed directory: start with cd docs.'; "
       "[[ \"$CMD\" == *cd* && \"$CMD\" != *pwd* ]] && echo 'Nothing shows where you ended up: add   ; pwd   on the same line after the cd.'" },
 
