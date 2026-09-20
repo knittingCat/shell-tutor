@@ -313,7 +313,7 @@ static const Lesson LESSONS[] = {
       "[[ \"$CMD\" == *'|'* ]] && [ \"$(tr -d ' ' < \"$OUT\")\" = \"20\" ]",
       "cat numbers.txt | wc -l",
       "cat numbers.txt | wc -l", NULL,
-      "[[ \"$CMD\" == *'|'* ]] || echo 'Use a pipe: cat the file and pipe it into wc -l.'; grep -q 'numbers.txt' \"$OUT\" && echo 'The file name is in the output: that means wc was given the file name instead of piped input.'" },
+      "[[ \"$CMD\" == *'-1'* ]] && echo 'That is the digit one. The option is the letter l, as in lines: wc -l.'; [[ \"$CMD\" == *'|'* ]] || echo 'Use a pipe: cat the file and pipe it into wc -l.'; grep -q 'numbers.txt' \"$OUT\" && echo 'The file name is in the output: that means wc was given the file name instead of piped input.'" },
 
     { "sort-uniq", RUN, "Pipes", "Sort and de-duplicate",
       "  sort puts lines in order. uniq drops repeated lines, but only when\n"
