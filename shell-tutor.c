@@ -110,7 +110,7 @@ static const Lesson LESSONS[] = {
       "It sounds pointless, but it's the shell's way of saying something: for\n"
       "messages in scripts, for checking what a variable holds, and for putting\n"
       "text into files, all of which come later.",
-      "Print the two words good morning",
+      "Print: good morning",
       "[ \"$(cat \"$OUT\")\" = \"good morning\" ]",
       "echo, then the words.",
       "echo good morning", NULL,
