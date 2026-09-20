@@ -820,10 +820,10 @@ static void reset_progress(void) {
 static void print_header(int i, int review) {
     const Lesson *l = &LESSONS[i];
     if (review) {
-        printf("\n%s%sReview  %s — %s%s\n\n", BOLD, CYAN, l->section, l->title, RESET);
+        printf("\n%s%sReview: %s — %s%s\n\n", BOLD, CYAN, l->section, l->title, RESET);
         return;
     }
-    printf("\n%s%s%d/%d  %s — %s%s\n\n", BOLD, CYAN, i + 1, LESSON_COUNT, l->section, l->title, RESET);
+    printf("\n%s%s%d/%d: %s — %s%s\n\n", BOLD, CYAN, i + 1, LESSON_COUNT, l->section, l->title, RESET);
     printf("%s\n\n", l->explain);
 }
 
