@@ -116,13 +116,13 @@ static const Lesson LESSONS[] = {
       "echo good morning", NULL,
       "grep -qi 'command not found' \"$OUT\" && echo 'The shell looked for a program with that name. The printing command is echo; the words come after it.'" },
 
-    { "semicolon", RUN, "Getting around", "Two commands on one line",
+    { "semicolon", RUN, "Getting around", "Two commands using 1 line",
       "Normally you type one command, press Enter, and it runs. To run two in a row\n"
       "from a single line, separate them with a semicolon:\n"
       "  echo one ; echo two\n"
       "runs echo one, and when that has finished, echo two. Spaces around the ;\n"
       "are optional. Any commands can be chained this way, as many as you like.",
-      "On one line, print the word   hello   and then the word   bye.",
+      "Using 1 line, print the word   hello   and then the word   bye.",
       "[ \"$(cat \"$OUT\")\" = \"$(printf 'hello\\nbye')\" ] && [[ \"$CMD\" == *';'* ]]",
       "echo hello ; echo bye",
       "echo hello ; echo bye", NULL,
@@ -169,7 +169,7 @@ static const Lesson LESSONS[] = {
       "  cd ..       goes up one level.     cd   on its own goes to your home folder.\n"
       "Each line you type here runs in a fresh shell that is thrown away afterwards,\n"
       "so a cd on its own would be forgotten immediately. Use the ; from the lesson\n"
-      "\"Two commands on one line\": cd into the folder, then a ; and then, on the same\n"
+      "\"Two commands using 1 line\": cd into the folder, then a ; and then, on the same\n"
       "line, the command from lesson 1 that prints where you are.",
       "Go into the docs folder and show the directory you are then in.",
       "grep -qx \"$(pwd)/docs\" \"$OUT\"",
