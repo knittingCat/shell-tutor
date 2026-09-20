@@ -1,6 +1,6 @@
 # shell-tutor
 
-Learn the Unix shell by doing. `shell-tutor` walks you through 41 short lessons — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
+Learn the Unix shell by doing. `shell-tutor` walks you through 42 short lessons — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
 
 Your commands run in a scratch folder that shell-tutor fills with example files, so nothing you try can touch your own files. A check runs after every command to see whether the task was done. Job-control lessons (Ctrl-Z, `fg`, `bg`, `&`, `kill %1`) can't be exercised inside a scratch shell, so those are short quizzes.
 
@@ -36,13 +36,13 @@ At the prompt, besides typing a command (or a letter in a quiz):
 | `goto N` | jump to lesson N |
 | `quit` | leave; progress is saved in `~/.shell-tutor/progress` |
 
-At the end of each section, three lessons from the two previous sections come back as a quick review — task only, no explanation. Miss one twice (or `idk` it) and it goes back into the pool to be taught again. Once every lesson is done there's a final review of all 41 in random order; running `shell-tutor` again after that repeats the final review.
+At the end of each section, three lessons from the two previous sections come back as a quick review — task only, no explanation. Miss one twice (or `idk` it) and it goes back into the pool to be taught again. Once every lesson is done there's a final review of all 42 in random order; running `shell-tutor` again after that repeats the final review.
 
 Each command you type runs in a fresh `zsh`, so `cd` doesn't carry over to the next line — lessons that need it ask you to combine commands with `;`. A command that runs longer than 15 seconds is stopped.
 
 ## Lessons
 
-1. Getting around — `pwd`, `ls`, `ls -la`, `;`, paths and `/`, `cd`
+1. Getting around — `pwd`, `ls`, `ls -la`, `echo`, `;`, paths and `/`, `cd`
 2. Reading files — `cat`, `head`, `tail`
 3. Making and changing files — `mkdir`, `cp`, `mv`, `rm`
 4. Redirection — `>`, `>>`

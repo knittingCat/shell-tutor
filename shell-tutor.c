@@ -104,6 +104,18 @@ static const Lesson LESSONS[] = {
       "grep -q '\\.secret' \"$OUT\" || echo 'The hidden file .secret is not in your list: that needs -a.'; "
       "grep -qE '^[-d][rwx-]{9}' \"$OUT\" || echo 'That is the short format: the long one needs -l.'" },
 
+    { "echo", RUN, "Getting around", "Printing text",
+      "  echo   prints whatever words follow it, then a new line:\n"
+      "  echo hi there   prints   hi there\n"
+      "It sounds pointless, but it's the shell's way of saying something: for\n"
+      "messages in scripts, for checking what a variable holds, and for putting\n"
+      "text into files, all of which come later.",
+      "Print the two words   good morning",
+      "[ \"$(cat \"$OUT\")\" = \"good morning\" ]",
+      "echo, then the words.",
+      "echo good morning", NULL,
+      "grep -qi 'command not found' \"$OUT\" && echo 'The shell looked for a program with that name. The printing command is echo; the words come after it.'" },
+
     { "semicolon", RUN, "Getting around", "Two commands on one line",
       "Normally you type one command, press Enter, and it runs. To run two in a row\n"
       "from a single line, separate them with a semicolon:\n"
@@ -219,7 +231,7 @@ static const Lesson LESSONS[] = {
       "Every command's output normally goes to the screen. The > sign sends it\n"
       "into a file instead, creating the file or replacing what was in it:\n"
       "  ls > listing.txt      puts the listing in a file instead of on screen.\n"
-      "  echo   just prints its arguments:  echo good morning",
+      "Combined with echo, that's how you put a line of text into a file.",
       "Create a file called greeting.txt containing the single word hello.",
       "[ \"$(cat greeting.txt 2>/dev/null)\" = \"hello\" ]",
       "echo hello > greeting.txt",
