@@ -67,9 +67,10 @@ typedef struct {
  */
 static const Lesson LESSONS[] = {
     { "pwd", RUN, "Getting around", "Where am I?",
-      "The shell always has a current directory: the folder your commands act on.\n"
-      "There's a three-letter command that prints its full path; its name is short\n"
-      "for \"print working directory\".",
+      "Directory is the shell's word for a folder; the two mean exactly the same\n"
+      "thing, and you'll see both. The shell always has a current directory: the\n"
+      "folder your commands act on. There's a three-letter command that prints its\n"
+      "full path; its name is short for \"print working directory\".",
       "Find out which folder you are in.",
       "grep -qx \"$(pwd)\" \"$OUT\" && [[ \"$CMD\" == *pwd* ]]",
       "p, then w, then d.",
