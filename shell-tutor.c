@@ -305,9 +305,10 @@ static const Lesson LESSONS[] = {
       "[[ \"$CMD\" == *'|'* ]] || echo 'No pipe in that command: send the output of one command into grep with |.'; grep -q '^banana$' \"$OUT\" && echo 'banana came through, and it has no e: grep should keep only matching lines.'" },
 
     { "wc", RUN, "Pipes", "Count things",
+      "wc is short for \"word count\", though it counts more than words:\n"
       "  wc -l counts lines. wc -w counts words. wc -c counts bytes.\n"
-      "Given a file name it prints the count and the name; fed through a pipe it\n"
-      "prints just the number.",
+      "With no option it prints all three. Given a file name it prints the\n"
+      "count and the name; fed through a pipe it prints just the number.",
       "Print how many lines numbers.txt has, using a pipe so only the number appears.",
       "[[ \"$CMD\" == *'|'* ]] && [ \"$(tr -d ' ' < \"$OUT\")\" = \"20\" ]",
       "cat numbers.txt | wc -l",
