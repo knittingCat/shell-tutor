@@ -260,10 +260,14 @@ static const Lesson LESSONS[] = {
       "[ -e old.log ] && echo 'old.log is still here.'; [ -f fruits.txt ] || echo 'fruits.txt was deleted too: rm only old.log.'" },
 
     { "redirect", RUN, "Redirection", "Send output to a file",
-      "Every command's output normally goes to the screen. The > sign sends it\n"
-      "into a file instead, creating the file or replacing what was in it:\n"
-      "  ls > listing.txt puts the listing in a file instead of on screen.\n"
-      "Combined with echo, that's how you put a line of text into a file.",
+      "Every command's output normally goes to the screen. Put > and a file name\n"
+      "after a command and its output goes into that file instead. Nothing appears\n"
+      "on screen; the file is created, or emptied and refilled if it already exists.\n"
+      "  ls > listing.txt      the listing ends up in listing.txt\n"
+      "  echo some words > note.txt      creates note.txt containing: some words\n"
+      "That second form is the usual way to make a small file: echo would print\n"
+      "the words, and > catches them into the file. The shape is always\n"
+      "  COMMAND > FILE",
       "Create a file called greeting.txt containing the single word hello.",
       "[ \"$(cat greeting.txt 2>/dev/null)\" = \"hello\" ]",
       "echo hello > greeting.txt",
