@@ -104,6 +104,19 @@ static const Lesson LESSONS[] = {
       "grep -q '\\.secret' \"$OUT\" || echo 'The hidden file .secret is not in your list: that needs -a.'; "
       "grep -qE '^[-d][rwx-]{9}' \"$OUT\" || echo 'That is the short format: the long one needs -l.'" },
 
+    { "semicolon", RUN, "Getting around", "Two commands on one line",
+      "Normally you type one command, press Enter, and it runs. To run two in a row\n"
+      "from a single line, separate them with a semicolon:\n"
+      "  echo one ; echo two\n"
+      "runs echo one, and when that has finished, echo two. Spaces around the ;\n"
+      "are optional. Any commands can be chained this way, as many as you like.",
+      "On one line, print the word   hello   and then the word   bye.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf 'hello\\nbye')\" ] && [[ \"$CMD\" == *';'* ]]",
+      "echo hello ; echo bye",
+      "echo hello ; echo bye", NULL,
+      "[[ \"$CMD\" == *';'* ]] || echo 'Put a ; between the two commands so both run from this one line.'; "
+      "grep -q '^hello bye$' \"$OUT\" && echo 'That is one echo printing two words. Two separate commands, one per word.'" },
+
     { "paths", RUN, "Getting around", "Paths and the slash",
       "A path is the address of a file or folder. The slash / does two jobs:\n"
       "\n"
@@ -129,19 +142,6 @@ static const Lesson LESSONS[] = {
       "[[ \"$CMD\" =~ '(^|[[:space:]])/docs' ]] && echo 'A path starting with / begins at the root of the disk. This docs folder is inside the current folder, so the path starts with docs, no leading slash.'; "
       "grep -qi 'no such file' \"$OUT\" && [[ \"$CMD\" != *'~'* ]] && ! [[ \"$CMD\" =~ '(^|[[:space:]])/docs' ]] && echo 'Not found: the file is docs/readme.md — folder name, slash, file name.'; "
       "grep -q 'Project' \"$OUT\" && [[ \"$CMD\" != *docs/readme.md* ]] && echo 'You reached the file, but use the path docs/readme.md in one command rather than cd first.'" },
-
-    { "semicolon", RUN, "Getting around", "Two commands on one line",
-      "Normally you type one command, press Enter, and it runs. To run two in a row\n"
-      "from a single line, separate them with a semicolon:\n"
-      "  echo one ; echo two\n"
-      "runs echo one, and when that has finished, echo two. Spaces around the ;\n"
-      "are optional. Any commands can be chained this way, as many as you like.",
-      "On one line, print the word   hello   and then the word   bye.",
-      "[ \"$(cat \"$OUT\")\" = \"$(printf 'hello\\nbye')\" ] && [[ \"$CMD\" == *';'* ]]",
-      "echo hello ; echo bye",
-      "echo hello ; echo bye", NULL,
-      "[[ \"$CMD\" == *';'* ]] || echo 'Put a ; between the two commands so both run from this one line.'; "
-      "grep -q '^hello bye$' \"$OUT\" && echo 'That is one echo printing two words. Two separate commands, one per word.'" },
 
     { "cd", RUN, "Getting around", "Moving into a folder",
       "  cd FOLDER   changes the current directory to FOLDER (any path works:\n"

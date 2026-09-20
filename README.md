@@ -42,7 +42,7 @@ Each command you type runs in a fresh `zsh`, so `cd` doesn't carry over to the n
 
 ## Lessons
 
-1. Getting around — `pwd`, `ls`, `ls -la`, paths and `/`, `;`, `cd`
+1. Getting around — `pwd`, `ls`, `ls -la`, `;`, paths and `/`, `cd`
 2. Reading files — `cat`, `head`, `tail`
 3. Making and changing files — `mkdir`, `cp`, `mv`, `rm`
 4. Redirection — `>`, `>>`
