@@ -338,7 +338,7 @@ static const Lesson LESSONS[] = {
       "matching in every folder.\n"
       "-name is one test of several. Plain find . lists everything below you.\n"
       "  -iname 'PATTERN' matches ignoring case (README.MD too)\n"
-      "  -type d only folders, -type f only files\n"
+      "  -type d only directories, -type f only files\n"
       "  -mtime -1 changed in the last day\n"
       "  -size +1M bigger than 1 megabyte\n"
       "Tests combine: find . -name '*.txt' -mtime -1 is .txt files changed today.",
