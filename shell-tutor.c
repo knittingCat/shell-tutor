@@ -374,11 +374,15 @@ static const Lesson BASIC[] = {
       "grep -q 'setup.md' \"$OUT\" || echo 'setup.md was not reported: it says INSTALL in capitals, so ignore case with -i, and search the docs folder recursively with -r.'" },
 
     { "chmod", RUN, "Scripts", "Make a script runnable",
-      "hello.sh is a shell script, but it can't be run yet: files need the\n"
-      "execute permission first.\n"
-      "  chmod +x FILE adds it. A script in the current directory is then run as\n"
-      "  ./NAME (the ./ means \"the one in this directory\", since the shell only\n"
-      "searches PATH otherwise).",
+      "A shell script is a file of commands; hello.sh here is one. Running it\n"
+      "takes two steps.\n"
+      "  1. Give the file permission to be run: chmod +x FILE (change mode, add\n"
+      "     execute). A file made with an editor or > does not have it.\n"
+      "  2. Run it by typing its path: ./FILE. The ./ means \"the one in this\n"
+      "     folder\"; typing the bare name does not work, because the shell looks\n"
+      "     for commands only in its list of program folders, not where you are.\n"
+      "So for a script called go.sh: chmod +x go.sh, then ./go.sh. Here the two\n"
+      "go on one line with ; between them, since each line is a fresh shell.",
       "Make hello.sh executable and run it.",
       "[ -x hello.sh ] && grep -q 'Hello from a script' \"$OUT\"",
       "chmod +x hello.sh ; ./hello.sh",
