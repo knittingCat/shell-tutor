@@ -939,12 +939,25 @@ static int run_lesson(int i, int review) {
             reset_work_dir();
             continue;
         }
-        if (access(work_dir, F_OK) != 0) {   /* something outside the tutor removed it */
-            printf("%sThe scratch folder had disappeared; made a fresh one.%s\n", DIM, RESET);
+        if (access(work_dir, F_OK) != 0) {
+            if (access(scratch_root, F_OK) != 0)
+                printf("%sThe tutor's whole scratch folder (%s) was deleted while the tutor was running.\n"
+                       "That was not this tutor: another terminal window, or a cleanup of the temporary folders.\n"
+                       "Made a fresh one.%s\n", YELLOW, scratch_root, RESET);
+            else
+                printf("%sThe scratch folder (%s) was deleted between two of your commands.\n"
+                       "Nothing typed here did that, so it came from outside: another terminal window,\n"
+                       "the Finder, or a cleanup of the temporary folders. Made a fresh one.%s\n", YELLOW, work_dir, RESET);
+            if (access(scratch_root, F_OK) != 0) mkdir(scratch_root, 0700);
             reset_work_dir();
         }
         int status = run_in_terminal(input, work_dir, out_file, input);
         show_output(status);
+        if (access(work_dir, F_OK) != 0) {
+            printf("%sThat command deleted the scratch folder itself, the folder you were standing in.\n"
+                   "Made a fresh one for the next try.%s\n", YELLOW, RESET);
+            reset_work_dir();
+        }
         if (run_shell(l->check, work_dir, NULL, input) == 0) {
             if (saw_answer) {
                 printf("%s✓ That's it.%s You'll get this one again later, without the answer.\n", GREEN, RESET);
