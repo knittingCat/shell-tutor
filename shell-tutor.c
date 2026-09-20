@@ -38,7 +38,7 @@
 #define COMMAND_TIMEOUT_SEC 15
 #define MAX_OUTPUT_LINES 40
 #define REVIEW_SIZE 3         /* earlier lessons re-asked at the end of each section */
-#define REVIEW_DEPTH 2        /* ...drawn from at most this many preceding sections */
+#define REVIEW_POOL 10        /* ...drawn from the nearest earlier sections holding this many done lessons */
 #define REVIEW_TRIES 2
 
 /* ---------- lessons ---------- */
@@ -978,6 +978,9 @@ static int quiz_lesson(int i, int review) {
     }
 }
 
+/* Lessons asked in the previous quick review; kept out of the next one when the pool allows. */
+static int last_reviewed[REVIEW_SIZE], last_reviewed_n = 0;
+
 /* Re-asks the lessons in pool[0..n) in random order, `count` of them at most. */
 static int review_lessons(int *pool, int n, int count) {
     for (int r = 0; r < count; r++) {
@@ -992,30 +995,36 @@ static int review_lessons(int *pool, int n, int count) {
 }
 
 /*
- * At the end of a section, re-ask a few finished lessons from the sections
- * just before it (not from the very beginning every time). No explanation is
- * shown; two misses (or idk) un-finish the lesson so it is taught again later.
+ * At the end of a section, re-ask a few finished lessons from earlier
+ * sections: walk back whole sections, as far as lesson 1 if needed, until
+ * the pool holds REVIEW_POOL done lessons. Lessons asked in the previous
+ * review are left out when enough others remain, so consecutive reviews
+ * don't repeat themselves. No explanation is shown; two misses (or idk)
+ * un-finish the lesson so it is taught again later.
  */
 static int review_pass(int section_end) {
     int pool[LESSON_COUNT], n = 0;
     const char *section = LESSONS[section_end].section;
-    const char *seen[REVIEW_DEPTH + 1];
-    int depth = 0;
     for (int k = section_end - 1; k >= 0; k--) {
         const char *sec = LESSONS[k].section;
         if (strcmp(sec, section) == 0) continue;
-        int known = 0;
-        for (int d = 0; d < depth; d++) if (strcmp(seen[d], sec) == 0) known = 1;
-        if (!known) {
-            if (depth == REVIEW_DEPTH) break;
-            seen[depth++] = sec;
-        }
+        if (n >= REVIEW_POOL && strcmp(sec, LESSONS[k + 1].section) != 0) break;   /* section boundary, pool full */
         if (done[k]) pool[n++] = k;
     }
     if (n == 0) return NEXT;
+    int fresh[LESSON_COUNT], f = 0;
+    for (int j = 0; j < n; j++) {
+        int repeat = 0;
+        for (int d = 0; d < last_reviewed_n; d++) if (last_reviewed[d] == pool[j]) repeat = 1;
+        if (!repeat) fresh[f++] = pool[j];
+    }
+    if (f >= REVIEW_SIZE) { memcpy(pool, fresh, f * sizeof *pool); n = f; }
     int count = n < REVIEW_SIZE ? n : REVIEW_SIZE;
-    printf("\n%s%sQuick review%s — %d from the last few sections, no explanations this time.\n", BOLD, YELLOW, RESET, count);
-    return review_lessons(pool, n, count);
+    printf("\n%s%sQuick review%s — %d from earlier sections, no explanations this time.\n", BOLD, YELLOW, RESET, count);
+    int result = review_lessons(pool, n, count);
+    last_reviewed_n = count;
+    memcpy(last_reviewed, pool, count * sizeof *pool);
+    return result;
 }
 
 /* Once everything is finished: every lesson once more, in random order. */
