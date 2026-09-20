@@ -326,7 +326,7 @@ static const Lesson LESSONS[] = {
       "[ \"$(cat \"$OUT\")\" = \"$(printf 'blue\\ngreen\\nred\\nyellow')\" ]",
       "sort colors.txt | uniq",
       "sort colors.txt | uniq", NULL,
-      "[[ \"$CMD\" == *sort* ]] || echo 'The lines are not sorted: uniq only removes repeats that are next to each other, so sort first.'; [[ \"$CMD\" == *uniq* ]] || echo 'Repeats are still there: pipe the sorted lines into uniq.'" },
+      "[[ \"$CMD\" == *sort* ]] || echo 'The lines are not sorted: uniq only removes repeats that are next to each other, so sort first.'; [[ \"$CMD\" == *uniq* ]] || echo 'Repeats are still there: pipe the sorted lines into uniq.'; [[ \"$CMD\" == *uniq*sort* ]] && echo 'uniq ran before sort, so the repeats were still apart when uniq looked at them. Sort first, then uniq.'" },
 
     { "find", RUN, "Searching", "Find files by name",
       "  find . -name 'PATTERN' searches the current directory (.) and every\n"
