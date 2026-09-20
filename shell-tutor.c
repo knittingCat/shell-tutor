@@ -263,8 +263,8 @@ static const Lesson LESSONS[] = {
       "Every command's output normally goes to the screen. Put > and a file name\n"
       "after a command and its output goes into that file instead. Nothing appears\n"
       "on screen; the file is created, or emptied and refilled if it already exists.\n"
-      "  ls > listing.txt      the listing ends up in listing.txt\n"
-      "  echo some words > note.txt      creates note.txt containing: some words\n"
+      "  ls > listing.txt puts the listing into listing.txt.\n"
+      "  echo some words > note.txt creates note.txt containing: some words\n"
       "That second form is the usual way to make a small file: echo would print\n"
       "the words, and > catches them into the file. The shape is always\n"
       "  COMMAND > FILE",
