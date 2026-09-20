@@ -112,10 +112,13 @@ static const Lesson LESSONS[] = {
       "forgotten immediately: put a ; after it and add a second command on the same\n"
       "line that shows where you ended up.",
       "Go into the docs folder and show the directory you are then in.",
-      "grep -q '/docs$' \"$OUT\"",
+      "grep -qx \"$(pwd)/docs\" \"$OUT\"",
       "cd docs ; pwd",
       "cd docs; pwd", NULL,
-      "grep -q 'docs' \"$OUT\" || echo 'Nothing printed the docs path: after the cd, add   ; pwd   on the same line.'; [[ \"$CMD\" == *cd* ]] || echo 'You never changed directory: start with cd docs.'" },
+      "[[ \"$CMD\" == *'~'* ]] && echo '~ means your home folder, and the docs folder is not there: it is inside the folder you are in now, so its path is just   docs'; "
+      "grep -qi 'no such file' \"$OUT\" && [[ \"$CMD\" != *'~'* ]] && echo 'That folder was not found: relative to here it is called docs, with no slash in front.'; "
+      "[[ \"$CMD\" == *cd* ]] || echo 'You never changed directory: start with cd docs.'; "
+      "[[ \"$CMD\" == *cd* && \"$CMD\" != *pwd* ]] && echo 'Nothing shows where you ended up: add   ; pwd   on the same line after the cd.'" },
 
     { "cat", RUN, "Reading files", "Show a file",
       "  cat FILE   prints a file's contents. Short for \"concatenate\": given\n"
