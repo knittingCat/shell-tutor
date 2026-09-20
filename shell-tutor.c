@@ -330,7 +330,12 @@ static const Lesson LESSONS[] = {
 
     { "find", RUN, "Searching", "Find files by name",
       "  find . -name 'PATTERN' searches the current directory (.) and every\n"
-      "folder inside it. Quote the pattern so the shell doesn't expand the * first.",
+      "folder inside it for names matching PATTERN. In a pattern, * stands for\n"
+      "\"any characters\", so '*.txt' means \"anything ending in .txt\".\n"
+      "The quotes matter: the shell itself also knows *, and before running a\n"
+      "command it swaps an unquoted *.txt for the matching names in the current\n"
+      "folder only. Quoted, the pattern reaches find untouched, and find does the\n"
+      "matching in every folder.",
       "Find every file whose name ends in .md, anywhere under the current directory.",
       "grep -q 'docs/readme.md' \"$OUT\" && grep -q 'docs/guide/setup.md' \"$OUT\" && ! grep -q 'fruits.txt' \"$OUT\"",
       "find . -name '*.md'",
