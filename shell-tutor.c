@@ -344,7 +344,9 @@ static const Lesson LESSONS[] = {
       "  -type d only directories, -type f only files\n"
       "  -mtime -1 changed in the last day\n"
       "  -size +1M bigger than 1 megabyte\n"
-      "Tests combine: find . -name '*.txt' -mtime -1 is .txt files changed today.",
+      "Tests combine: find . -name '*.txt' -mtime -1 is .txt files changed today.\n"
+      "The tests can go in any order, but each one takes the word right after it\n"
+      "as its value, so keep -name and its pattern together.",
       "Find every file whose name ends in .md, anywhere under the current directory.",
       "grep -q 'docs/readme.md' \"$OUT\" && grep -q 'docs/guide/setup.md' \"$OUT\" && ! grep -q 'fruits.txt' \"$OUT\"",
       "find . -name '*.md'",
