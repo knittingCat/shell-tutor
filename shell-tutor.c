@@ -390,10 +390,17 @@ static const Lesson BASIC[] = {
       "[ -x hello.sh ] || echo 'hello.sh is still not executable: chmod +x hello.sh first.'; grep -q 'Hello from a script' \"$OUT\" || echo 'The script did not run: after chmod, run it as ./hello.sh on the same line.'" },
 
     { "vars", RUN, "Scripts", "Variables",
-      "  NAME=value sets a shell variable (no spaces around the =).\n"
-      "  $NAME uses it. Double quotes keep spaces together: \"$NAME\".\n"
-      "  $(command) is replaced by the command's output.",
-      "Set a variable to the output of whoami and echo I am <that name>.",
+      "A variable is a name that holds a piece of text, so you can use the text\n"
+      "again by its name.\n"
+      "  city=Paris sets one (no spaces around the =).\n"
+      "  $city is replaced by what it holds: echo \"I live in $city\" prints\n"
+      "  I live in Paris. Put such a sentence in double quotes.\n"
+      "A variable can also hold what a command printed: wrap the command in $( ).\n"
+      "  today=$(date) stores the output of date in today.\n"
+      "A new command for this task: whoami prints your user name, the short\n"
+      "name of your account. Both steps go on one line, joined with ;, since\n"
+      "each line here is a fresh shell and a variable dies with its shell.",
+      "Store the output of whoami in a variable, then use the variable to print: I am, followed by your user name.",
       "grep -q \"^I am $(whoami)$\" \"$OUT\" && [[ \"$CMD\" == *'$'* ]]",
       "me=$(whoami); echo \"I am $me\"",
       "me=$(whoami); echo \"I am $me\"", NULL,
