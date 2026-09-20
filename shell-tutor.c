@@ -306,7 +306,8 @@ static const Lesson LESSONS[] = {
 
     { "wc", RUN, "Pipes", "Count things",
       "wc is short for \"word count\", though it counts more than words:\n"
-      "  wc -l counts lines. wc -w counts words. wc -c counts bytes.\n"
+      "  wc -l counts lines (that is the letter l, as in lines, not the digit\n"
+      "one). wc -w counts words. wc -c counts bytes.\n"
       "With no option it prints all three. Given a file name it prints the\n"
       "count and the name; fed through a pipe it prints just the number.",
       "Print how many lines numbers.txt has, using a pipe so only the number appears.",
