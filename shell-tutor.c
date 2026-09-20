@@ -275,13 +275,20 @@ static const Lesson LESSONS[] = {
       "[ -e greeting.txt ] || echo 'No greeting.txt was created: send the output into it with >.'; [ -e greeting.txt ] && [ \"$(cat greeting.txt)\" != hello ] && echo \"greeting.txt contains '$(cat greeting.txt)', not hello.\"" },
 
     { "append", RUN, "Redirection", "Add to the end of a file",
-      "  >> appends instead of replacing.\n"
-      "fruits.txt currently ends with cherry.",
-      "Add the line date to the end of fruits.txt without losing what's there.",
-      "[ \"$(tail -n 1 fruits.txt)\" = \"date\" ] && grep -q '^apple$' fruits.txt",
-      "echo date >> fruits.txt",
-      "echo date >> fruits.txt", NULL,
-      "grep -q '^apple$' fruits.txt || echo 'The original lines are gone: > replaced the file. Appending is >>.'; grep -q '^date$' fruits.txt || echo 'date was not added to fruits.txt.'" },
+      "> throws away whatever the file held before. To keep it and add more at the\n"
+      "end, use two of them: >> appends. Each command adds its output as new lines\n"
+      "after the existing ones:\n"
+      "  echo first > note.txt    note.txt now holds one line: first\n"
+      "  echo second >> note.txt  note.txt now holds two lines: first, second\n"
+      "  echo third > note.txt    back to one line: third (the > replaced it all)\n"
+      "fruits.txt here holds three lines: apple, banana, cherry.",
+      "Add a fourth line, the word mango, to the end of fruits.txt, keeping the three lines already there.",
+      "[ \"$(tail -n 1 fruits.txt)\" = \"mango\" ] && grep -q '^apple$' fruits.txt && [ \"$(wc -l < fruits.txt | tr -d ' ')\" = 4 ]",
+      "echo the word, then >> and the file name.",
+      "echo mango >> fruits.txt", NULL,
+      "grep -q '^apple$' fruits.txt || echo 'The original lines are gone: > replaced the file. Appending is >>.'; "
+      "grep -q '^mango$' fruits.txt || echo 'mango was not added to fruits.txt.'; "
+      "[ \"$(grep -c '^mango$' fruits.txt)\" -gt 1 ] && echo 'mango was added more than once; the file should end with exactly one.'" },
 
     { "pipe", RUN, "Pipes", "Connect two commands",
       "The | sign (a pipe) sends one command's output into the next command's\n"
