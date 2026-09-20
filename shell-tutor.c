@@ -294,6 +294,8 @@ static const Lesson LESSONS[] = {
       "First a new command. grep reads lines and prints only the ones that\n"
       "contain a given piece of text: grep an fruits.txt prints the lines of\n"
       "fruits.txt containing \"an\". The word after grep is what to look for.\n"
+      "(The name is short for \"global regular expression print\": search\n"
+      "everywhere for a pattern and print the matches.)\n"
       "Now the pipe. The | sign (a pipe) sends one command's output into the next\n"
       "command's input, so given no file name, grep reads whatever is piped in:\n"
       "  cat fruits.txt | grep an does the same as above, in two steps.\n"
