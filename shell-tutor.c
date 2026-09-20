@@ -168,8 +168,9 @@ static const Lesson LESSONS[] = {
       "              relative like docs, or absolute like /Users/ann).\n"
       "  cd ..       goes up one level.     cd   on its own goes to your home folder.\n"
       "Each line you type here runs in a fresh shell that is thrown away afterwards,\n"
-      "so a cd on its own would be forgotten immediately. Use the ; from the last\n"
-      "lesson: cd, then on the same line a second command that shows where you are.",
+      "so a cd on its own would be forgotten immediately. Use the ; from the lesson\n"
+      "\"Two commands on one line\": cd into the folder, then a ; and then, on the same\n"
+      "line, the command from lesson 1 that prints where you are.",
       "Go into the docs folder and show the directory you are then in.",
       "grep -qx \"$(pwd)/docs\" \"$OUT\"",
       "cd docs ; pwd",
