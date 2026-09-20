@@ -104,10 +104,36 @@ static const Lesson LESSONS[] = {
       "grep -q '\\.secret' \"$OUT\" || echo 'The hidden file .secret is not in your list: that needs -a.'; "
       "grep -qE '^[-d][rwx-]{9}' \"$OUT\" || echo 'That is the short format: the long one needs -l.'" },
 
+    { "paths", RUN, "Getting around", "Paths and the slash",
+      "A path is the address of a file or folder. The slash / does two jobs:\n"
+      "\n"
+      "  Between names it separates folder from what's inside:  docs/readme.md\n"
+      "  means \"the file readme.md inside the folder docs\".\n"
+      "\n"
+      "  At the very start it means the root: the top of the whole disk, the one\n"
+      "  folder that contains everything else.  /Users/ann/Desktop  starts at the\n"
+      "  root and walks down, so it names the same place no matter where you are.\n"
+      "  That's an absolute path.\n"
+      "\n"
+      "A path that does NOT start with / is relative: it starts from the folder you\n"
+      "are in right now (the one pwd prints).  docs/readme.md  means the docs folder\n"
+      "here, then readme.md inside it. Three shortcuts you'll see everywhere:\n"
+      "  .    the folder you are in          ..   the folder above it\n"
+      "  ~    your home folder (where your Desktop and Documents live)\n"
+      "So  ~/docs  would be a docs folder in your home, not the one here.",
+      "Print the contents of readme.md, which is inside the docs folder here, using its relative path.",
+      "grep -q '^# Project$' \"$OUT\" && [[ \"$CMD\" == *docs/readme.md* ]]",
+      "cat, then the path: folder, slash, file name.",
+      "cat docs/readme.md", NULL,
+      "[[ \"$CMD\" == *'~'* ]] && echo '~ is your home folder; the docs folder is here, in the current folder, so no ~.'; "
+      "[[ \"$CMD\" =~ '(^|[[:space:]])/docs' ]] && echo 'A path starting with / begins at the root of the disk. This docs folder is inside the current folder, so the path starts with docs, no leading slash.'; "
+      "grep -qi 'no such file' \"$OUT\" && [[ \"$CMD\" != *'~'* ]] && ! [[ \"$CMD\" =~ '(^|[[:space:]])/docs' ]] && echo 'Not found: the file is docs/readme.md — folder name, slash, file name.'; "
+      "grep -q 'Project' \"$OUT\" && [[ \"$CMD\" != *docs/readme.md* ]] && echo 'You reached the file, but use the path docs/readme.md in one command rather than cd first.'" },
+
     { "cd", RUN, "Getting around", "Moving into a folder",
-      "  cd FOLDER   changes the current directory to FOLDER.\n"
-      "  cd ..       goes up one level.     cd   on its own goes to your home directory.\n"
-      "Paths without a leading / are relative to where you are now.\n"
+      "  cd FOLDER   changes the current directory to FOLDER (any path works:\n"
+      "              relative like docs, or absolute like /Users/ann).\n"
+      "  cd ..       goes up one level.     cd   on its own goes to your home folder.\n"
       "Each line you type here runs in a fresh shell, so a cd on its own would be\n"
       "forgotten immediately: put a ; after it and add a second command on the same\n"
       "line that shows where you ended up.",
