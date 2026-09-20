@@ -335,7 +335,13 @@ static const Lesson LESSONS[] = {
       "The quotes matter: the shell itself also knows *, and before running a\n"
       "command it swaps an unquoted *.txt for the matching names in the current\n"
       "folder only. Quoted, the pattern reaches find untouched, and find does the\n"
-      "matching in every folder.",
+      "matching in every folder.\n"
+      "-name is one test of several. Plain find . lists everything below you.\n"
+      "  -iname 'PATTERN' matches ignoring case (README.MD too)\n"
+      "  -type d only folders, -type f only files\n"
+      "  -mtime -1 changed in the last day\n"
+      "  -size +1M bigger than 1 megabyte\n"
+      "Tests combine: find . -name '*.txt' -mtime -1 is .txt files changed today.",
       "Find every file whose name ends in .md, anywhere under the current directory.",
       "grep -q 'docs/readme.md' \"$OUT\" && grep -q 'docs/guide/setup.md' \"$OUT\" && ! grep -q 'fruits.txt' \"$OUT\"",
       "find . -name '*.md'",
