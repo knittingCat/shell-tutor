@@ -89,11 +89,11 @@ static const Lesson LESSONS[] = {
       "what the command does. Each option does one thing only. ls has two you'll\n"
       "use constantly:\n"
       "  ls -a lists ALL files: the ones plain ls shows, plus the hidden ones.\n"
-      "          A file whose name starts with a dot, like .secret, is hidden:\n"
-      "          plain ls leaves it out, ls -a includes it. One command, one list.\n"
+      "        A file whose name starts with a dot, like .secret, is hidden:\n"
+      "        plain ls leaves it out, ls -a includes it. One command, one list.\n"
       "  ls -l changes the format, not the selection: a long listing, one file\n"
-      "          per line, with its permissions, owner, size and date. It shows\n"
-      "          the same files as plain ls, so hidden files are still left out.\n"
+      "        per line, with its permissions, owner, size and date. It shows\n"
+      "        the same files as plain ls, so hidden files are still left out.\n"
       "To get both effects you give both options to one ls. Several one-letter\n"
       "options can share a single dash: ls -l -t and ls -lt mean the same thing.",
       "Show the hidden file too, in the long format.",
@@ -165,7 +165,7 @@ static const Lesson LESSONS[] = {
 
     { "cd", RUN, "Getting around", "Moving into a folder",
       "  cd FOLDER changes the current directory to FOLDER (any path works:\n"
-      "              relative like docs, or absolute like /Users/ann).\n"
+      "            relative like docs, or absolute like /Users/ann).\n"
       "  cd .. goes up one level. cd on its own goes to your home folder.\n"
       "Each line you type here runs in a fresh shell that is thrown away afterwards,\n"
       "so a cd on its own would be forgotten immediately. Use the ; from the lesson\n"
