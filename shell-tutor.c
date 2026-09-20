@@ -356,9 +356,13 @@ static const Lesson LESSONS[] = {
       "grep -q 'setup.md' \"$OUT\" || echo 'docs/guide/setup.md was not found: find searches every folder below the one you give it (start from .).'; grep -q 'fruits.txt' \"$OUT\" && echo 'fruits.txt matched too: the -name pattern should only match .md.'" },
 
     { "grep-r", RUN, "Searching", "Search inside files",
-      "  grep -r WORD FOLDER looks for WORD inside every file under FOLDER and\n"
-      "prints each matching line with its file name.\n"
-      "  -i ignores case. -n adds line numbers.",
+      "You met grep in the Pipes section, picking lines out of one file. Given a\n"
+      "folder instead of a file it refuses, unless you add -r (recursive): then it\n"
+      "looks inside every file under that folder, and prints each matching line\n"
+      "with the name of the file it came from in front.\n"
+      "  grep -r WORD FOLDER\n"
+      "Two more options: -i ignores case, so it matches Install and INSTALL too.\n"
+      "-n adds the line number. Options can be run together: -ri, -rn, -rin.",
       "Find which file under docs mentions the word install (any case).",
       "grep -q 'setup.md' \"$OUT\" && ! grep -q 'readme.md' \"$OUT\"",
       "grep -ri install docs",
