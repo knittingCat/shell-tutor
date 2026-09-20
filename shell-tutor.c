@@ -331,7 +331,10 @@ static const Lesson LESSONS[] = {
     { "find", RUN, "Searching", "Find files by name",
       "  find . -name 'PATTERN' searches the current directory (.) and every\n"
       "folder inside it for names matching PATTERN. In a pattern, * stands for\n"
-      "\"any characters\", so '*.txt' means \"anything ending in .txt\".\n"
+      "\"any characters\", so '*.txt' means \"anything ending in .txt\". It only\n"
+      "stands in where you put it: '*fruits' is names ending in fruits (not\n"
+      "fruits.txt), 'fruits*' names starting with it, '*fruits*' names containing\n"
+      "it anywhere.\n"
       "The quotes matter: the shell itself also knows *, and before running a\n"
       "command it swaps an unquoted *.txt for the matching names in the current\n"
       "folder only. Quoted, the pattern reaches find untouched, and find does the\n"
