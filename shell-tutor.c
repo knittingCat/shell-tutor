@@ -130,13 +130,26 @@ static const Lesson LESSONS[] = {
       "grep -qi 'no such file' \"$OUT\" && [[ \"$CMD\" != *'~'* ]] && ! [[ \"$CMD\" =~ '(^|[[:space:]])/docs' ]] && echo 'Not found: the file is docs/readme.md — folder name, slash, file name.'; "
       "grep -q 'Project' \"$OUT\" && [[ \"$CMD\" != *docs/readme.md* ]] && echo 'You reached the file, but use the path docs/readme.md in one command rather than cd first.'" },
 
+    { "semicolon", RUN, "Getting around", "Two commands on one line",
+      "Normally you type one command, press Enter, and it runs. To run two in a row\n"
+      "from a single line, separate them with a semicolon:\n"
+      "  echo one ; echo two\n"
+      "runs echo one, and when that has finished, echo two. Spaces around the ;\n"
+      "are optional. Any commands can be chained this way, as many as you like.",
+      "On one line, print the word   hello   and then the word   bye.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf 'hello\\nbye')\" ] && [[ \"$CMD\" == *';'* ]]",
+      "echo hello ; echo bye",
+      "echo hello ; echo bye", NULL,
+      "[[ \"$CMD\" == *';'* ]] || echo 'Put a ; between the two commands so both run from this one line.'; "
+      "grep -q '^hello bye$' \"$OUT\" && echo 'That is one echo printing two words. Two separate commands, one per word.'" },
+
     { "cd", RUN, "Getting around", "Moving into a folder",
       "  cd FOLDER   changes the current directory to FOLDER (any path works:\n"
       "              relative like docs, or absolute like /Users/ann).\n"
       "  cd ..       goes up one level.     cd   on its own goes to your home folder.\n"
-      "Each line you type here runs in a fresh shell, so a cd on its own would be\n"
-      "forgotten immediately: put a ; after it and add a second command on the same\n"
-      "line that shows where you ended up.",
+      "Each line you type here runs in a fresh shell that is thrown away afterwards,\n"
+      "so a cd on its own would be forgotten immediately. Use the ; from the last\n"
+      "lesson: cd, then on the same line a second command that shows where you are.",
       "Go into the docs folder and show the directory you are then in.",
       "grep -qx \"$(pwd)/docs\" \"$OUT\"",
       "cd docs ; pwd",
