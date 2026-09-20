@@ -291,10 +291,13 @@ static const Lesson LESSONS[] = {
       "[ \"$(grep -c '^mango$' fruits.txt)\" -gt 1 ] && echo 'mango was added more than once; the file should end with exactly one.'" },
 
     { "pipe", RUN, "Pipes", "Connect two commands",
-      "The | sign (a pipe) sends one command's output into the next command's\n"
-      "input. That is how small tools get combined into bigger ones:\n"
-      "  cat fruits.txt | grep an shows only the lines containing \"an\".\n"
-      "  grep PATTERN keeps only lines that match PATTERN.",
+      "First a new command. grep reads lines and prints only the ones that\n"
+      "contain a given piece of text: grep an fruits.txt prints the lines of\n"
+      "fruits.txt containing \"an\". The word after grep is what to look for.\n"
+      "Now the pipe. The | sign (a pipe) sends one command's output into the next\n"
+      "command's input, so given no file name, grep reads whatever is piped in:\n"
+      "  cat fruits.txt | grep an does the same as above, in two steps.\n"
+      "That is how small tools get combined into bigger ones.",
       "Show only the lines of fruits.txt that contain the letter e.",
       "[[ \"$CMD\" == *'|'* ]] && grep -q '^cherry$' \"$OUT\" && ! grep -q '^banana$' \"$OUT\"",
       "cat the file, pipe it into grep e.",
