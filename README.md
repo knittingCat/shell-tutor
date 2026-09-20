@@ -1,6 +1,6 @@
 # shell-tutor
 
-Learn the Unix shell by doing. `shell-tutor` walks you through 43 short lessons (and `shell-tutor --advanced` through 35 more) — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
+Learn the Unix shell by doing. `shell-tutor` walks you through 43 short lessons (then `shell-tutor --advanced` through 35 more, and `shell-tutor --github` through 25 on git and GitHub) — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
 
 Your commands run in a scratch folder that shell-tutor fills with example files, so nothing you try can touch your own files. A check runs after every command to see whether the task was done. Job-control lessons (Ctrl-Z, `fg`, `bg`, `&`, `kill %1`) can't be exercised inside a scratch shell, so those are short quizzes.
 
@@ -38,9 +38,15 @@ At the prompt, besides typing a command (or a letter in a quiz):
 
 ## The second tier
 
-`shell-tutor --advanced` is a further 35 lessons for after the first course: printf and here-documents, writing scripts (arguments, `read`, `if`, `case`, functions, loops, exit status, arithmetic), environment variables, PATH, aliases and `~/.zshrc`, permissions and `chmod`, regular expressions, `sed`, `awk`, processes and signals, `2>&1`, `diff`, `du`, `date`, `ssh`/`scp`. It keeps its own progress (`~/.shell-tutor/progress-advanced`); `--advanced N`, `--advanced --list` and `--advanced --reset` work as for the first course.
+`shell-tutor --advanced` is a further 35 lessons for after the first course: printf and here-documents, writing scripts (arguments, `read`, `if`, `case`, functions, loops, exit status, arithmetic), environment variables, PATH, aliases and the startup file (`~/.zshrc` / `~/.bashrc`), permissions and `chmod`, regular expressions, `sed`, `awk`, processes and signals, `2>&1`, `diff`, `du`, `date`, `ssh`/`scp`. It keeps its own progress (`~/.shell-tutor/progress-advanced`); `--advanced N`, `--advanced --list` and `--advanced --reset` work as for the first course.
 
 Two things are different at the advanced prompt: a command may span lines (a line ending in `\` continues; a here-document `<<EOF` reads until `EOF` alone on a line), and the example files are kept between tries within a lesson, so you can write a script with one command and run it with the next. `reset` gives fresh files.
+
+## The third tier
+
+`shell-tutor --github` is 25 lessons on git and GitHub, meant for after the other two. The scratch folder holds small repositories built fresh for each lesson and a pretend GitHub (bare repositories `remote.git` and `shared.git`), so `clone`, `push` and `pull` are real commands with real results and nothing leaves the machine. Covered: what a commit is, `init`, `status`, `add`, `commit`, `log`, `diff`, `restore`, `.gitignore`, `add -A`, `--amend`, branches, `merge`, conflicts (quiz), `stash`, remotes, `clone`, `remote -v`, `push`, `pull`, putting a project on GitHub, HTTPS vs SSH, fork and pull request, the `gh` CLI, and what must never be pushed (all quizzes where GitHub itself would be needed). Lessons that start inside a repository show its name in the prompt (`project $`). Progress is in `~/.shell-tutor/progress-github`.
+
+The tutor runs every command in `zsh -f`, the Mac's default shell; the lessons say so where zsh and bash differ (`echo` and `\n`, the startup file).
 
 At the end of each section, three lessons from earlier sections come back as a quick review (drawn from the nearest sections holding 10 done lessons, going back as far as lesson 1; the previous review's picks are left out) — task only, no explanation. Miss one twice (or `idk` it) and it goes back into the pool to be taught again. Once every lesson is done there's a final review of all 43 in random order; running `shell-tutor` again after that repeats the final review.
 

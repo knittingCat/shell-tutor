@@ -58,6 +58,7 @@ typedef struct {
     const char *answer;   /* RUN: a command that passes. QUIZ: explanation shown after answering */
     const char *options;  /* QUIZ only: choices separated by '\n' */
     const char *diagnose; /* RUN, optional: zsh snippet run after a failed check; whatever it prints is shown */
+    const char *dir;      /* RUN, optional: sub-folder of the scratch dir the command, check and diagnose run in */
 } Lesson;
 
 /*
@@ -111,7 +112,9 @@ static const Lesson BASIC[] = {
       "  echo hi there prints hi there\n"
       "It sounds pointless, but it's the shell's way of saying something: for\n"
       "messages in scripts, for checking what a variable holds, and for putting\n"
-      "text into files, all of which come later.",
+      "text into files, all of which come later. One caution for later: in zsh\n"
+      "echo turns \\n into a line break, in bash it does not; when that matters,\n"
+      "there is printf, which behaves the same everywhere.",
       "Print: good morning",
       "[ \"$(cat \"$OUT\")\" = \"good morning\" ]",
       "echo, then the words.",
@@ -856,28 +859,34 @@ static const Lesson ADVANCED[] = {
       "alias ll='ls -la'; alias", NULL,
       "[[ \"$CMD\" == *'alias ll='* ]] || echo 'Start with alias ll=...'; grep -q 'command not found: ll' \"$OUT\" && echo 'As the lesson says, ll is not known on the line that defines it. Show the alias list instead: alias'; [[ \"$CMD\" == *'alias ll='* ]] && [ ! -s \"$OUT\" ] && echo 'The alias was defined but nothing was printed: add ; alias to list them.'" },
 
-    { "zshrc", QUIZ, "Your shell setup", "Making it stick: ~/.zshrc",
+    { "zshrc", QUIZ, "Your shell setup", "Making it stick: the startup file",
       "Aliases, PATH changes and exported variables vanish with the shell that\n"
-      "made them. To have them in every terminal, put the same lines into the\n"
-      "file ~/.zshrc: zsh reads it every time a new interactive shell starts.\n"
-      "(bash uses ~/.bashrc.) A shell that is already open does not notice the\n"
-      "change; run source ~/.zshrc in it, or open a new terminal window.",
-      "You add alias ll='ls -la' to ~/.zshrc, but the terminal window you already have open says: command not found: ll. Why?",
+      "made them. To have them in every terminal, put the same lines into your\n"
+      "shell's startup file, which it reads every time a new interactive shell\n"
+      "starts:\n"
+      "  ~/.zshrc   for zsh, the default shell on a Mac\n"
+      "  ~/.bashrc  for bash (on a Mac, bash reads ~/.bash_profile at login,\n"
+      "             which usually just sources ~/.bashrc)\n"
+      "echo $SHELL tells you which one you have. A shell that is already open\n"
+      "does not notice a change to the file; run source on it (source ~/.zshrc)\n"
+      "in that window, or open a new terminal window.",
+      "You add alias ll='ls -la' to your startup file, but the terminal window you already have open says: command not found: ll. Why?",
       "b",
-      "When is ~/.zshrc read?",
-      "~/.zshrc is read once, when a shell starts. This shell started before the line was added. source ~/.zshrc reads it now; new windows get it automatically.",
-      "a) aliases cannot go in ~/.zshrc\nb) the file is read when a shell starts, and this one started earlier: run source ~/.zshrc or open a new window\nc) the Mac must be restarted\nd) ~/.zshrc is only for PATH", NULL },
+      "When is the startup file read?",
+      "The startup file is read once, when a shell starts. This shell started before the line was added. source ~/.zshrc (or ~/.bashrc) reads it now; new windows get it automatically.",
+      "a) aliases cannot go in the startup file\nb) the file is read when a shell starts, and this one started earlier: source it or open a new window\nc) the Mac must be restarted\nd) the startup file is only for PATH", NULL },
 
     { "history", QUIZ, "Your shell setup", "Getting commands back",
       "The shell remembers what you typed. The up arrow walks back through it,\n"
       "history prints the list, !! repeats the last command (sudo !! is a common\n"
       "use), and Ctrl-R searches: press it, type part of an old command, and the\n"
-      "matching line appears; press Enter to run it, Ctrl-R again for older matches.",
+      "matching line appears (bash labels it reverse-i-search); press Enter to run\n"
+      "it, Ctrl-R again for older matches.",
       "You ran a long command ten minutes ago and want it back without retyping it. The quickest way?",
       "a",
       "Search, don't scroll.",
       "Ctrl-R searches backwards through your history as you type. The other three work but take longer.",
-      "a) press Ctrl-R and type a few letters from it\nb) open ~/.zsh_history in an editor\nc) press the up arrow until it appears\nd) type it again", NULL },
+      "a) press Ctrl-R and type a few letters from it\nb) open the history file (~/.zsh_history or ~/.bash_history) in an editor\nc) press the up arrow until it appears\nd) type it again", NULL },
 
     /* ----- Permissions ----- */
 
@@ -1090,10 +1099,347 @@ static const Lesson ADVANCED[] = {
       "a) scp report.pdf ann@box.example.com:\nb) ssh report.pdf ann@box.example.com\nc) cp report.pdf ann@box.example.com\nd) scp ann@box.example.com: report.pdf", NULL },
 };
 
+/* ---------- the third tier: shell-tutor --github ---------- */
+
+static const Lesson GITHUB[] = {
+    /* ----- Git basics ----- */
+
+    { "git-what", QUIZ, "Git basics", "What git keeps",
+      "git is a program that keeps the history of a folder. You tell it, at\n"
+      "moments of your choosing, \"remember the folder as it is now\"; each such\n"
+      "snapshot is a commit, with a message, your name and the time. The folder\n"
+      "with its history is a repository (repo). The history lives in a hidden\n"
+      ".git folder inside it; nothing is sent anywhere unless you ask.\n"
+      "GitHub is a website that stores copies of repositories, so you can back\n"
+      "them up, work from two machines, or work with other people.",
+      "What does one commit contain?",
+      "a",
+      "A commit is a snapshot, not a diff of one file.",
+      "A commit records the whole tracked folder as it was, plus the message, author and time. git shows you differences between commits, but what it stores is snapshots.",
+      "a) a snapshot of every tracked file, with a message, author and time\nb) only the one file that changed last\nc) a copy of the folder on GitHub\nd) a zip file of the folder", NULL },
+
+    { "git-init", RUN, "Git basics", "Starting a repository",
+      "  git init turns the current folder into a repository: it creates the\n"
+      "hidden .git folder where the history will live. The files are untouched\n"
+      "and nothing is remembered yet; that takes a commit. You are in app, a\n"
+      "plain folder with two files.",
+      "Make this folder a git repository.",
+      "[ -d .git ]",
+      "git init",
+      "git init", NULL,
+      "[ -d .git ] || echo 'There is no .git folder yet: git init creates it.'", "app" },
+
+    { "git-status", RUN, "Git basics", "What has changed",
+      "  git status is the command you will type most. It says which branch you\n"
+      "are on, which tracked files have been changed since the last commit, what\n"
+      "is staged (ready for the next commit) and which files are untracked: git\n"
+      "has never been told about them. Run it whenever you are unsure.\n"
+      "From here on you are in project, a repository with some history.",
+      "Show the state of this repository.",
+      "[[ \"$CMD\" == *status* ]] && grep -q 'notes.txt' \"$OUT\"",
+      "git status",
+      "git status", NULL,
+      NULL, "project" },
+
+    { "git-add", RUN, "Git basics", "Staging",
+      "A commit does not take every change automatically. First you stage the\n"
+      "changes that belong together, then you commit what is staged.\n"
+      "  git add FILE stages a file (new or changed).\n"
+      "  git add . stages everything in the current folder and below.\n"
+      "git status then lists it under \"Changes to be committed\". Staging is\n"
+      "reversible: git restore --staged FILE takes it out again.",
+      "notes.txt is new and untracked. Stage it, and nothing else.",
+      "git diff --cached --name-only | grep -qx notes.txt && [ \"$(git diff --cached --name-only | wc -l)\" -eq 1 ]",
+      "git add notes.txt",
+      "git add notes.txt", NULL,
+      "git diff --cached --name-only | grep -qx notes.txt || echo 'notes.txt is not staged yet: git add notes.txt'; [ \"$(git diff --cached --name-only | wc -l)\" -gt 1 ] && echo 'More than notes.txt is staged: git restore --staged main.py takes the other one back out.'", "project" },
+
+    { "git-commit", RUN, "Git basics", "Committing",
+      "  git commit -m 'MESSAGE' records what is staged as a new commit. The\n"
+      "message says what the change is, briefly, as an instruction: Add notes,\n"
+      "Fix the login bug, not \"changed stuff\". Without -m git opens an editor\n"
+      "for the message; here that is turned off, so use -m.",
+      "Stage notes.txt and commit it with the message: Add notes",
+      "git log -1 --format=%s | grep -qx 'Add notes' && git ls-tree -r HEAD --name-only | grep -qx notes.txt",
+      "git add notes.txt, then git commit -m 'Add notes'",
+      "git add notes.txt; git commit -m 'Add notes'", NULL,
+      "git ls-tree -r HEAD --name-only | grep -qx notes.txt || { git diff --cached --name-only | grep -qx notes.txt && echo 'notes.txt is staged; now commit it: git commit -m ...' || echo 'notes.txt is not staged: git add notes.txt first.'; }; grep -q 'empty commit message\\|Please supply the message' \"$OUT\" && echo 'No message was given: git commit -m '\"'\"'Add notes'\"'\"; git log -1 --format=%s | grep -q '^Add notes$' || { git ls-tree -r HEAD --name-only | grep -qx notes.txt && echo \"Committed, but the message is '$(git log -1 --format=%s)', not: Add notes\"; }", "project" },
+
+    { "git-log", RUN, "Git basics", "The history",
+      "  git log lists the commits, newest first: id, author, date, message.\n"
+      "  git log --oneline is the compact form, one line per commit: the short\n"
+      "id and the message. That id names the commit in other commands.\n"
+      "  git show ID shows one commit with its changes. q leaves the pager.",
+      "Show the history of this repository, one line per commit.",
+      "[[ \"$CMD\" == *log* ]] && grep -q 'Add greet function' \"$OUT\" && [ \"$(grep -c 'greet' \"$OUT\")\" -eq 1 ]",
+      "git log with --oneline.",
+      "git log --oneline", NULL,
+      "[[ \"$CMD\" == *log* ]] || echo 'The command is git log.'; grep -q '^Author:' \"$OUT\" && echo 'That is the long form: --oneline makes it one line per commit.'", "project" },
+
+    { "git-diff", RUN, "Git basics", "What exactly changed",
+      "  git diff shows the changes in the working folder that are not staged\n"
+      "yet, line by line: lines starting with - were removed, + added.\n"
+      "  git diff --staged shows what is staged instead.\n"
+      "  git diff ID1 ID2 compares two commits.\n"
+      "main.py has been edited since the last commit.",
+      "Show what changed in main.py.",
+      "[[ \"$CMD\" == *diff* ]] && grep -q '^+greet(\"world\")' \"$OUT\"",
+      "git diff, optionally followed by the file name.",
+      "git diff main.py", NULL,
+      "[[ \"$CMD\" == *diff* ]] || echo 'The command is git diff.'", "project" },
+
+    { "git-restore", RUN, "Git basics", "Throwing a change away",
+      "  git restore FILE puts a file back as it is in the last commit,\n"
+      "discarding the changes in the working folder. There is no undo for this,\n"
+      "which is exactly what makes it useful: experiment freely, then restore.\n"
+      "(Older guides say git checkout -- FILE, which does the same.)",
+      "Discard the uncommitted change to main.py.",
+      "git diff --quiet -- main.py && git diff --cached --quiet -- main.py && grep -q 'def greet(name)' main.py",
+      "git restore main.py",
+      "git restore main.py", NULL,
+      "git diff --quiet -- main.py || echo 'main.py still differs from the last commit.'; git diff --cached --quiet -- main.py || echo 'The change is staged now, not gone: git restore --staged main.py, then git restore main.py'", "project" },
+
+    { "gitignore", RUN, "Git basics", "Files git should ignore",
+      "Some files should never be committed: passwords and keys, logs, build\n"
+      "output, editor leftovers. Their names or patterns go in a file called\n"
+      ".gitignore in the repository, one per line, and git stops listing them as\n"
+      "untracked. * works as in the shell: *.log ignores every log file. The\n"
+      ".gitignore file itself is committed, so everyone gets the same rules.\n"
+      "This repository already ignores secrets.env; debug.log is still showing.",
+      "Make git ignore every file ending in .log.",
+      "git check-ignore -q debug.log && ! git ls-files --error-unmatch debug.log >/dev/null 2>&1",
+      "Add a *.log line to .gitignore (>> appends).",
+      "echo '*.log' >> .gitignore", NULL,
+      "[ -e .gitignore ] || echo '.gitignore is gone; it should hold one pattern per line.'; [ -e .gitignore ] && ! grep -q 'secrets.env' .gitignore && echo 'The old secrets.env rule was lost: > replaced the file; >> appends.'; git check-ignore -q debug.log || echo 'debug.log is not ignored yet: the pattern *.log on its own line in .gitignore does it.'", "project" },
+
+    { "commit-all", RUN, "Git basics", "Committing everything at once",
+      "For a commit that should take all the current changes:\n"
+      "  git add -A stages everything: changed, new and deleted files (ignored\n"
+      "  ones excepted); then git commit -m ... as usual.\n"
+      "  git commit -am 'MESSAGE' does both in one go, but only for files git\n"
+      "  already tracks: new files still need git add.\n"
+      "Here main.py is changed and notes.txt is new.",
+      "Commit every current change, main.py and notes.txt included, with the message: Save everything",
+      "git log -1 --format=%s | grep -qx 'Save everything' && git diff --quiet && git diff --cached --quiet && git ls-files --error-unmatch notes.txt >/dev/null 2>&1",
+      "git add -A, then git commit -m 'Save everything'",
+      "git add -A; git commit -m 'Save everything'", NULL,
+      "git log -1 --format=%s | grep -qx 'Save everything' && ! git ls-files --error-unmatch notes.txt >/dev/null 2>&1 && echo 'Committed, but notes.txt was left out: -a only takes tracked files. git add -A first.'; git log -1 --format=%s | grep -qx 'Save everything' || { git diff --cached --quiet || echo 'Changes are staged; now git commit -m ...'; }", "project" },
+
+    { "git-amend", RUN, "Git basics", "Fixing the last commit",
+      "Typo in the message, or forgot a file? git commit --amend replaces the\n"
+      "last commit with a new one made of what is staged now plus the old\n"
+      "content; with -m it takes a new message. Only amend commits you have\n"
+      "not pushed yet: rewriting history that others already have makes a mess.",
+      "Change the message of the last commit to: Add greet function with a name",
+      "git log -1 --format=%s | grep -qx 'Add greet function with a name' && [ \"$(git rev-list --count HEAD)\" -eq 2 ]",
+      "git commit --amend -m '...'",
+      "git commit --amend -m 'Add greet function with a name'", NULL,
+      "[ \"$(git rev-list --count HEAD)\" -gt 2 ] && echo 'A new commit was added instead: --amend replaces the last one.'; [[ \"$CMD\" == *amend* ]] && ! git log -1 --format=%s | grep -qx 'Add greet function with a name' && echo \"The message is now '$(git log -1 --format=%s)'; check the spelling.\"", "project" },
+
+    { "git-branch", RUN, "Git basics", "Branches",
+      "A branch is a line of commits with a name. main is the one you start\n"
+      "with. Work on something new on its own branch, so main stays usable\n"
+      "until the work is ready.\n"
+      "  git branch lists the branches, * marks the current one.\n"
+      "  git switch -c NAME creates a branch and moves to it.\n"
+      "  git switch NAME moves to an existing one.\n"
+      "(Older guides: git checkout -b NAME, git checkout NAME.)",
+      "Create a branch called fix and switch to it.",
+      "[ \"$(git branch --show-current)\" = fix ]",
+      "git switch -c fix",
+      "git switch -c fix", NULL,
+      "git branch --list fix | grep -q fix && [ \"$(git branch --show-current)\" != fix ] && echo 'The branch fix exists but you are still on another one: git switch fix'; git branch --list fix | grep -q fix || echo 'No branch called fix yet: git switch -c fix makes it and moves there.'", "project" },
+
+    { "git-merge", RUN, "Git basics", "Merging",
+      "When the work on a branch is ready, bring it into main:\n"
+      "  git switch main\n"
+      "  git merge NAME\n"
+      "The commits from NAME become part of main. If main had not moved, git\n"
+      "simply moves it forward (a fast-forward); otherwise it makes a merge\n"
+      "commit joining the two. The branch feature here has one commit that main\n"
+      "does not; you are on main.",
+      "Bring the feature branch's work into main.",
+      "[ \"$(git branch --show-current)\" = main ] && git log --oneline main | grep -q 'Add feature notes'",
+      "git merge feature",
+      "git merge feature", NULL,
+      "[ \"$(git branch --show-current)\" = main ] || echo \"You are on $(git branch --show-current) now; the merge should happen on main: git switch main first.\"; [ \"$(git branch --show-current)\" = main ] && ! git log --oneline | grep -q 'Add feature notes' && echo 'main does not have the feature commit yet: git merge feature'", "project" },
+
+    { "conflict", QUIZ, "Git basics", "Merge conflicts",
+      "When both sides changed the same lines, git cannot choose and stops with\n"
+      "a conflict. It writes both versions into the file, marked:\n"
+      "  <<<<<<< HEAD\n"
+      "  your version\n"
+      "  =======\n"
+      "  their version\n"
+      "  >>>>>>> feature\n"
+      "You edit the file to what it should be, delete the marker lines, then\n"
+      "git add FILE and git commit to finish the merge. git status lists the\n"
+      "files still in conflict; git merge --abort gives up and goes back.",
+      "git merge stopped with: CONFLICT (content): Merge conflict in main.py. What do you do?",
+      "c",
+      "The markers are a question for you, not an error to retry.",
+      "Open main.py, keep what is right from both sides, remove the <<<<<<< ======= >>>>>>> lines, then git add main.py and git commit. Merging again does nothing until that is done.",
+      "a) run git merge again\nb) delete main.py and restart\nc) edit main.py to the right content, remove the markers, git add it, then commit\nd) push to GitHub so it resolves the conflict", NULL },
+
+    { "git-stash", RUN, "Git basics", "Setting changes aside",
+      "Half-way through a change you need a clean folder, for a quick fix or to\n"
+      "switch branches. git stash takes the uncommitted changes away and stores\n"
+      "them; the folder is back at the last commit. git stash pop brings them\n"
+      "back. git stash list shows what is stored.",
+      "Set the uncommitted change to main.py aside without committing it, so that the folder is clean.",
+      "git diff --quiet -- main.py && git stash list | grep -q stash",
+      "git stash",
+      "git stash", NULL,
+      "git diff --quiet -- main.py || echo 'main.py still has the change: git stash puts it away.'; git stash list | grep -q stash || { git diff --quiet -- main.py && echo 'The change is gone but nothing is stashed: that was a restore, not a stash. Type reset and try git stash.'; }", "project" },
+
+    /* ----- GitHub and remotes ----- */
+
+    { "remote-what", QUIZ, "GitHub and remotes", "What GitHub is",
+      "A remote is another copy of a repository that yours knows about, usually\n"
+      "on a server. GitHub is the best-known place to keep one. Your repository\n"
+      "sends commits there (push) and gets commits from there (pull); the copy\n"
+      "on GitHub is just another repository with the same history. By\n"
+      "convention the main remote is called origin. git itself needs no GitHub;\n"
+      "GitHub adds the sharing, a web view of the history, and pull requests.",
+      "Which is true?",
+      "b",
+      "GitHub is a place to keep a copy; git is the tool.",
+      "GitHub hosts repositories. git works entirely on your machine; pushing to GitHub is optional and only copies what you have committed.",
+      "a) git needs a GitHub account to make commits\nb) GitHub stores a copy of a repository; git works without it\nc) pushing to GitHub sends your uncommitted files too\nd) a remote is a branch", NULL },
+
+    { "git-clone", RUN, "GitHub and remotes", "Getting a copy: clone",
+      "  git clone URL makes a complete copy of a repository, with all its\n"
+      "history, in a new folder named after it, and remembers where it came from\n"
+      "as the remote origin. A second word picks a different folder name.\n"
+      "On GitHub the URL is on the green Code button, such as\n"
+      "https://github.com/USER/REPO.git. Here remote.git stands in for a\n"
+      "repository on GitHub.",
+      "Get a working copy of remote.git into a folder called copy.",
+      "[ -d copy/.git ] && [ -f copy/README.md ]",
+      "git clone remote.git copy",
+      "git clone remote.git copy", NULL,
+      "[ -d remote.git/.git ] && echo 'That was not it: remote.git is the source, not the result.'; [ -d copy ] || echo 'No copy folder appeared: git clone SOURCE copy'" },
+
+    { "git-remote", RUN, "GitHub and remotes", "Where does it push to?",
+      "  git remote -v lists the remotes a repository knows and their URLs\n"
+      "(one line for fetching, one for pushing). A cloned repository has origin\n"
+      "set already; one made with git init has none until you add one:\n"
+      "  git remote add origin URL",
+      "Show this repository's remotes with their locations.",
+      "[[ \"$CMD\" == *remote* ]] && grep -q 'remote.git' \"$OUT\"",
+      "git remote with -v.",
+      "git remote -v", NULL,
+      "[[ \"$CMD\" == *remote* ]] || echo 'The command is git remote.'; [[ \"$CMD\" == *remote* ]] && ! grep -q 'remote.git' \"$OUT\" && echo 'Only the names showed: -v adds the locations.'", "project" },
+
+    { "git-push", RUN, "GitHub and remotes", "Sending commits: push",
+      "  git push sends the commits of the current branch to the remote it\n"
+      "tracks. The first push of a new branch says which remote and branch:\n"
+      "  git push -u origin main\n"
+      "and after that git push alone is enough. Push is refused when the remote\n"
+      "has commits you do not have; then pull first (next lesson).\n"
+      "This repository has a commit that origin does not.",
+      "Send the missing commit to origin.",
+      "[ \"$(git rev-parse main)\" = \"$(git --git-dir=../remote.git rev-parse main)\" ]",
+      "git push",
+      "git push", NULL,
+      "[[ \"$CMD\" == *push* ]] || echo 'The command is git push.'; grep -q 'rejected' \"$OUT\" && echo 'The push was rejected: the remote has something you lack; git pull, then push again.'", "project" },
+
+    { "git-pull", RUN, "GitHub and remotes", "Getting commits: pull",
+      "  git pull fetches the commits the remote has that you lack and merges\n"
+      "them into your current branch. Do it before you start working, and\n"
+      "before a push. With uncommitted changes to the same files it refuses;\n"
+      "commit or stash first.\n"
+      "You are in shared, a clone of shared.git. A friend has pushed a commit\n"
+      "there since you cloned.",
+      "Get the friend's commit into this repository.",
+      "git log --oneline | grep -q 'Note from a friend' && grep -q 'friend' README.md",
+      "git pull",
+      "git pull", NULL,
+      "[[ \"$CMD\" == *fetch* ]] && ! git log --oneline | grep -q 'friend' && echo 'fetch downloaded the commit but did not merge it into your branch: git pull does both (or git merge origin/main now).'; [[ \"$CMD\" == *pull* ]] || [[ \"$CMD\" == *fetch* ]] || echo 'The command is git pull.'", "shared" },
+
+    { "new-repo", QUIZ, "GitHub and remotes", "Putting a project on GitHub",
+      "You have a repository on your machine and want it on GitHub:\n"
+      "  1. on github.com, New repository, give it a name, create it empty\n"
+      "     (no README, since you have files already);\n"
+      "  2. GitHub shows the URL; back in your repository:\n"
+      "     git remote add origin URL\n"
+      "     git push -u origin main\n"
+      "From then on git push is enough. The other direction, a project that\n"
+      "starts on GitHub, is git clone.",
+      "You made an empty repository called notes on GitHub. Your local repository has commits. What now?",
+      "a",
+      "Connect, then push.",
+      "Add GitHub as the remote origin, then push with -u so main tracks it. Cloning would make a second, empty copy; pulling gets nothing from an empty repository.",
+      "a) git remote add origin git@github.com:you/notes.git, then git push -u origin main\nb) git clone git@github.com:you/notes.git\nc) git pull origin main\nd) upload the folder through the website", NULL },
+
+    { "ssh-https", QUIZ, "GitHub and remotes", "HTTPS or SSH",
+      "A GitHub URL comes in two forms:\n"
+      "  https://github.com/USER/REPO.git   asks who you are on each push;\n"
+      "     GitHub no longer accepts your account password there, only a\n"
+      "     personal access token (a long generated string) or a helper that\n"
+      "     stores one.\n"
+      "  git@github.com:USER/REPO.git       uses an SSH key: made once with\n"
+      "     ssh-keygen, its public half added under Settings, SSH keys on\n"
+      "     GitHub; then pushes just work. git remote set-url origin URL\n"
+      "     switches an existing repository from one to the other.",
+      "git push over HTTPS asks for a password and rejects your GitHub password. What is going on?",
+      "c",
+      "Passwords over HTTPS were retired.",
+      "Over HTTPS GitHub wants a personal access token, not the password. The usual way out is the SSH URL with an SSH key, set once.",
+      "a) your password is wrong; reset it\nb) push needs sudo\nc) GitHub does not take account passwords here: use a token, or switch the remote to the SSH URL and add an SSH key\nd) the repository is private, so push is impossible", NULL },
+
+    { "fork-pr", QUIZ, "GitHub and remotes", "Contributing: fork and pull request",
+      "To change a project you cannot push to:\n"
+      "  1. Fork it on GitHub: a copy under your account.\n"
+      "  2. git clone your fork; make a branch; commit; git push the branch.\n"
+      "  3. On GitHub, open a pull request (PR): a request that the owners\n"
+      "     merge your branch. They review, maybe ask for changes (more\n"
+      "     commits on the same branch update the PR), then merge.\n"
+      "Even in a project you own, a branch plus a PR is how teams review\n"
+      "changes before they reach main.",
+      "You found a typo in the README of a project you have no write access to. The flow?",
+      "b",
+      "Fork, branch, push, pull request.",
+      "Fork it, clone the fork, fix on a branch, push the branch to your fork, open a pull request against the original. Pushing to the original is refused; emailing patches is what PRs replaced.",
+      "a) git push the fix to the original repository\nb) fork it, clone your fork, fix on a branch, push, then open a pull request\nc) open an issue and wait for the owner to fix it\nd) email the owner a corrected README", NULL },
+
+    { "gh-cli", QUIZ, "GitHub and remotes", "GitHub from the terminal: gh",
+      "gh is GitHub's own command-line tool (brew install gh). After gh auth\n"
+      "login once:\n"
+      "  gh repo create NAME --public --source=. --push   makes the GitHub\n"
+      "     repository for the folder you are in, connects and pushes it\n"
+      "  gh pr create      opens a pull request for the current branch\n"
+      "  gh pr list, gh pr checkout N, gh issue list ...\n"
+      "Everything gh does can be done on the website; gh saves the trip.",
+      "Your branch is pushed and you want a pull request without opening the browser. Which command?",
+      "a",
+      "gh, then the thing (pr), then the action.",
+      "gh pr create opens a pull request for the current branch, asking for title and description. There is no git pr; git itself knows nothing about pull requests, which are a GitHub feature.",
+      "a) gh pr create\nb) git pr create\nc) git push --pr\nd) gh push", NULL },
+
+    { "never-commit", QUIZ, "GitHub and remotes", "What must never be pushed",
+      "A repository on GitHub, even a private one, is a place other people and\n"
+      "programs can reach. Keep out of commits: passwords, API keys and tokens\n"
+      "(put them in a file that .gitignore lists, such as .env), big generated\n"
+      "folders (node_modules, build output; they are re-creatable), and large\n"
+      "binaries. And history remembers: removing a secret in a later commit does\n"
+      "not unpublish it.",
+      "You notice a commit you pushed yesterday contains an API key. What is the right response?",
+      "c",
+      "The key is out; the fix is on the other end.",
+      "Treat the key as leaked: revoke it where it was issued and make a new one, then remove it from the repository and add the file to .gitignore. Deleting the line in a new commit leaves the old commit, and the key, in the history for anyone to read.",
+      "a) delete the key from the file and push a new commit\nb) make the repository private\nc) revoke the key and issue a new one, then clean up the repository and ignore the file\nd) delete the repository from GitHub", NULL },
+};
+
 #define MAX_LESSONS 64
 static const Lesson *LESSONS = BASIC;
 static int LESSON_COUNT = (int)(sizeof BASIC / sizeof BASIC[0]);
-static int advanced;   /* --advanced: the second lesson set, with its own progress file */
+enum { TIER_BASIC, TIER_ADVANCED, TIER_GITHUB };
+static int tier;
+static const char *tier_flag[] = { "", " --advanced", " --github" };
+static const char *tier_progress[] = { "progress", "progress-advanced", "progress-github" };
+/* The later tiers keep the files between tries within a lesson (write a script, then run it). */
+#define keep_files (tier != TIER_BASIC)
 
 /* Files every RUN lesson starts with. Runs in a fresh scratch directory. */
 static const char *FIXTURES =
@@ -1117,6 +1463,26 @@ static const char *FIXTURES =
     "printf 'cat\\ncar\\ncart\\nbat\\nbatch\\ndog\\nabc123\\n2024\\n' > words.txt\n"
     "printf 'Dear NAME,\\nYour order NUMBER has shipped.\\nThanks again, NAME\\n' > letter.txt\n"
     "printf 'apple\\nbanana\\ncherry\\n' > v1.txt && printf 'apple\\nbanana\\norange\\n' > v2.txt\n";
+
+/* The --github tier: two repositories and their "GitHub" (bare repos), all inside the scratch dir. */
+static const char *GIT_FIXTURES =
+    "mkdir app && printf 'print(\"hi\")\\n' > app/main.py && printf '# App\\n' > app/README.md\n"
+    "git init -q -b main project && cd project\n"
+    "printf '# Project\\n\\nA small project.\\n' > README.md\n"
+    "printf 'def greet():\\n    print(\"hello\")\\n' > main.py\n"
+    "printf 'secrets.env\\n' > .gitignore\n"
+    "git add -A && git commit -qm 'Start the project'\n"
+    "git init -q --bare ../remote.git && git remote add origin ../remote.git && git push -q -u origin main 2>/dev/null\n"
+    "printf 'def greet(name):\\n    print(\"hello, \" + name)\\n' > main.py && git commit -qam 'Add greet function'\n"
+    "git switch -qc feature && printf 'ideas for the feature\\n' > feature.txt && git add feature.txt && git commit -qm 'Add feature notes' && git switch -q main\n"
+    "printf '\\ngreet(\"world\")\\n' >> main.py\n"
+    "printf 'remember to write tests\\n' > notes.txt\n"
+    "printf 'TOKEN=abc123\\n' > secrets.env\n"
+    "printf 'debug output\\n' > debug.log\n"
+    "cd ..\n"
+    "git init -q --bare shared.git && git clone -q shared.git shared 2>/dev/null && cd shared\n"
+    "printf '# Shared\\n\\nNotes we both edit.\\n' > README.md && git add -A && git commit -qm 'Start shared' && git push -q -u origin main 2>/dev/null && cd ..\n"
+    "git clone -q shared.git friend 2>/dev/null && cd friend && printf '\\nA note from a friend.\\n' >> README.md && git commit -qam 'Note from a friend' && git push -q 2>/dev/null && cd .. && rm -rf friend\n";
 
 /* ---------- terminal helpers ---------- */
 
@@ -1245,6 +1611,7 @@ static void reset_work_dir(void) {
     snprintf(script, sizeof script, "rm -rf work && mkdir work && cd work && :");
     run_shell(script, scratch_root, NULL, NULL);
     run_shell(FIXTURES, work_dir, NULL, NULL);
+    if (tier == TIER_GITHUB) run_shell(GIT_FIXTURES, work_dir, NULL, NULL);
 }
 
 static void setup_scratch(void) {
@@ -1294,7 +1661,7 @@ static int done[MAX_LESSONS];
 static void load_progress(void) {
     const char *home = getenv("HOME");
     if (!home) home = ".";
-    snprintf(progress_path, sizeof progress_path, "%s/.shell-tutor/%s", home, advanced ? "progress-advanced" : "progress");
+    snprintf(progress_path, sizeof progress_path, "%s/.shell-tutor/%s", home, tier_progress[tier]);
     FILE *f = fopen(progress_path, "r");
     if (!f) return;
     char line[128];
@@ -1341,10 +1708,13 @@ static void print_task(const Lesson *l) {
 
 static void print_prompt_help(int kind) {
     if (kind == RUN)
-        printf("%sType a command, or: hint, idk (show the answer), %sskip, list, quit%s\n", DIM, advanced ? "reset (fresh files), " : "", RESET);
+        printf("%sType a command, or: hint, idk (show the answer), %sskip, list, quit%s\n", DIM, keep_files ? "reset (fresh files), " : "", RESET);
     else
         printf("%sType a letter, or: hint, idk (show the answer), skip, list, quit%s\n", DIM, RESET);
 }
+
+static char lesson_dir[PATH_MAX];   /* work_dir, or the lesson's sub-folder of it */
+static char lesson_prompt[PATH_MAX];
 
 /* Reads a raw line without trimming (here-document bodies keep their indentation). */
 static char *read_raw_line(const char *prompt, char *buf, size_t size) {
@@ -1362,7 +1732,7 @@ static char *read_raw_line(const char *prompt, char *buf, size_t size) {
  */
 static char *read_command(char *buf, size_t size) {
     char line[2048];
-    char *first = read_line("$ ", line, sizeof line);
+    char *first = read_line(lesson_prompt, line, sizeof line);
     if (!first) return NULL;
     snprintf(buf, size, "%s", first);
     char terminator[64] = "";
@@ -1439,10 +1809,21 @@ static void forget(int i) {
     save_progress();
 }
 
+
+static void enter_lesson_dir(const Lesson *l) {
+    if (l->dir) {
+        snprintf(lesson_dir, sizeof lesson_dir, "%s/%s", work_dir, l->dir);
+        snprintf(lesson_prompt, sizeof lesson_prompt, "%s $ ", l->dir);
+    } else {
+        snprintf(lesson_dir, sizeof lesson_dir, "%s", work_dir);
+        snprintf(lesson_prompt, sizeof lesson_prompt, "$ ");
+    }
+}
+
 /* After a failed check: run the lesson's diagnosis, print what it says. */
 static void explain_failure(const Lesson *l, const char *input) {
     if (!l->diagnose) return;
-    run_shell(l->diagnose, work_dir, diag_file, input);
+    run_shell(l->diagnose, lesson_dir, diag_file, input);
     FILE *f = fopen(diag_file, "r");
     if (!f) return;
     char line[512];
@@ -1454,6 +1835,7 @@ static int run_lesson(int i, int review) {
     const Lesson *l = &LESSONS[i];
     print_header(i, review);
     reset_work_dir();
+    enter_lesson_dir(l);
     print_task(l);
     print_prompt_help(RUN);
     char buf[8192];
@@ -1486,14 +1868,14 @@ static int run_lesson(int i, int review) {
             if (access(scratch_root, F_OK) != 0) mkdir(scratch_root, 0700);
             reset_work_dir();
         }
-        int status = run_in_terminal(input, work_dir, out_file, input);
+        int status = run_in_terminal(input, lesson_dir, out_file, input);
         show_output(status);
         if (access(work_dir, F_OK) != 0) {
             printf("%sThat command deleted the scratch folder itself, the folder you were standing in.\n"
                    "Made a fresh one for the next try.%s\n", YELLOW, RESET);
             reset_work_dir();
         }
-        if (run_shell(l->check, work_dir, NULL, input) == 0) {
+        if (run_shell(l->check, lesson_dir, NULL, input) == 0) {
             if (saw_answer) {
                 printf("%s✓ That's it.%s You'll get this one again later, without the answer.\n", GREEN, RESET);
                 return NEXT;
@@ -1505,12 +1887,12 @@ static int run_lesson(int i, int review) {
         }
         printf("%sNot quite.%s\n", RED, RESET);
         explain_failure(l, input);
-        if (review && ++tries >= (advanced ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
+        if (review && ++tries >= (keep_files ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
             printf("One way:  %s\nBack into the lessons it goes.\n", l->answer);
             forget(i);
             return NEXT;
         }
-        if (advanced) {
+        if (keep_files) {
             /* Files stay as they are between tries: write the script, then run it. */
             printf("Try again, or type hint. The files are as you left them; reset gives you fresh ones.\n");
         } else {
@@ -1629,6 +2011,8 @@ static void usage(void) {
          "  shell-tutor --reset  forget your progress\n"
          "  shell-tutor --advanced [N | --list | --reset]\n"
          "                       the second tier: scripts, regex, sed, awk, PATH, permissions...\n"
+         "  shell-tutor --github [N | --list | --reset]\n"
+         "                       the third tier: git and GitHub\n"
          "\n"
          "At the prompt: hint, idk (show the answer), skip, list, goto N, quit.");
 }
@@ -1636,10 +2020,27 @@ static void usage(void) {
 int main(int argc, char **argv) {
     use_color = isatty(STDOUT_FILENO) && !getenv("NO_COLOR");
     if (argc > 1 && strcmp(argv[1], "--advanced") == 0) {
-        advanced = 1;
+        tier = TIER_ADVANCED;
         LESSONS = ADVANCED;
         LESSON_COUNT = (int)(sizeof ADVANCED / sizeof ADVANCED[0]);
         argc--; argv++;
+    } else if (argc > 1 && strcmp(argv[1], "--github") == 0) {
+        tier = TIER_GITHUB;
+        LESSONS = GITHUB;
+        LESSON_COUNT = (int)(sizeof GITHUB / sizeof GITHUB[0]);
+        argc--; argv++;
+        /* Commits in the scratch repositories need an identity, and nothing here may open an editor. */
+        setenv("GIT_CONFIG_COUNT", "6", 1);
+        setenv("GIT_CONFIG_KEY_0", "user.name", 1);          setenv("GIT_CONFIG_VALUE_0", "Shell Tutor", 1);
+        setenv("GIT_CONFIG_KEY_1", "user.email", 1);         setenv("GIT_CONFIG_VALUE_1", "tutor@example.com", 1);
+        setenv("GIT_CONFIG_KEY_2", "init.defaultBranch", 1); setenv("GIT_CONFIG_VALUE_2", "main", 1);
+        setenv("GIT_CONFIG_KEY_3", "pull.rebase", 1);        setenv("GIT_CONFIG_VALUE_3", "false", 1);
+        setenv("GIT_CONFIG_KEY_4", "color.ui", 1);           setenv("GIT_CONFIG_VALUE_4", "false", 1);
+        setenv("GIT_CONFIG_KEY_5", "advice.waitingForEditor", 1); setenv("GIT_CONFIG_VALUE_5", "false", 1);
+        setenv("GIT_EDITOR", "true", 1);
+        setenv("GIT_PAGER", "cat", 1);   /* the output is captured; a pager would wait for a key nobody can press */
+        setenv("GIT_MERGE_AUTOEDIT", "no", 1);
+        setenv("GIT_TERMINAL_PROMPT", "0", 1);
     }
     load_progress();
 
@@ -1663,10 +2064,18 @@ int main(int argc, char **argv) {
     signal(SIGINT, SIG_IGN);   /* Ctrl-C at the tutor prompt shouldn't kill the tutor; it still stops a running command */
 
     printf("%s%sshell-tutor%s%s — commands run in a scratch folder (%s), never in your files.\n",
-           BOLD, CYAN, advanced ? " (advanced)" : "", RESET, work_dir);
+           BOLD, CYAN, tier == TIER_ADVANCED ? " (advanced)" : tier == TIER_GITHUB ? " (git and GitHub)" : "", RESET, work_dir);
     int any_done = 0;
     for (int k = 0; k < LESSON_COUNT; k++) any_done += done[k];
-    if (!any_done && advanced) {
+    if (!any_done && tier == TIER_GITHUB) {
+        printf("\nThe third tier: git, and GitHub. It assumes the other two. The scratch folder\n"
+               "holds small repositories made for each lesson, and a pretend GitHub (bare\n"
+               "repositories called remote.git and shared.git) to push to and pull from, so\n"
+               "every command here is real and nothing leaves this computer. Some lessons\n"
+               "start you inside a repository; the prompt shows its name.\n"
+               "Files stay as you leave them between tries within a lesson; reset gives you\n"
+               "fresh ones.\n");
+    } else if (!any_done && tier == TIER_ADVANCED) {
         printf("\nThe second tier. It assumes the first course: paths, pipes, redirection, grep,\n"
                "variables, wildcards. Two things are new at this prompt. A line ending in \\\n"
                "continues on the next line, and a here-document (cat > file <<'EOF') keeps\n"
@@ -1679,7 +2088,9 @@ int main(int argc, char **argv) {
                "sometimes followed by options (like -l) and the files it should work on.\n"
                "Each lesson explains one thing, then asks you to try it. If you have no idea,\n"
                "type   idk   to see an answer, then type that yourself to see what it does.\n"
-               "Nothing you try here can damage anything.\n");
+               "Nothing you try here can damage anything.\n"
+               "The commands here run in zsh, the shell a Mac opens by default. Everything\n"
+               "taught applies to bash as well; the few places where they differ say so.\n");
     }
 
     int i = start, quit = 0;
@@ -1710,11 +2121,9 @@ int main(int argc, char **argv) {
         }
         if (pending == 0) {
             printf("\n%sThat's all %d lessons, reviewed and all. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
-            if (advanced)
-                printf("Run   shell-tutor --advanced   again any time for another full review, or   shell-tutor --advanced --reset   to start from scratch.\n");
-            else
-                printf("Run   shell-tutor   again any time for another full review, or   shell-tutor --reset   to start from scratch.\n"
-                       "Ready for more? There is a second tier:   shell-tutor --advanced\n");
+            printf("Run   shell-tutor%s   again any time for another full review, or   shell-tutor%s --reset   to start from scratch.\n", tier_flag[tier], tier_flag[tier]);
+            if (tier == TIER_BASIC) printf("Ready for more? There is a second tier:   shell-tutor --advanced\n");
+            if (tier == TIER_ADVANCED) printf("Ready for more? The third tier is git and GitHub:   shell-tutor --github\n");
             break;
         }
         printf("\n%sGoing back to the %d lesson%s you skipped or needed the answer for.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
@@ -1734,6 +2143,6 @@ int main(int argc, char **argv) {
 
     int finished = 0;
     for (int k = 0; k < LESSON_COUNT; k++) finished += done[k];
-    printf("%s%d of %d lessons done. Run shell-tutor%s again to continue.%s\n", DIM, finished, LESSON_COUNT, advanced ? " --advanced" : "", RESET);
+    printf("%s%d of %d lessons done. Run shell-tutor%s again to continue.%s\n", DIM, finished, LESSON_COUNT, tier_flag[tier], RESET);
     return 0;
 }
