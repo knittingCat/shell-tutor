@@ -170,7 +170,9 @@ static const Lesson LESSONS[] = {
       "then on relative paths start there. Nothing on disk moves, only you.\n"
       "  cd FOLDER goes into FOLDER (any path works: relative like docs, or\n"
       "            absolute like /Users/ann).\n"
-      "  cd .. goes up one level. cd on its own goes to your home folder.\n"
+      "  cd .. goes up one level. cd on its own goes to your home folder, which\n"
+      "  the shell also calls ~ (so cd ~ is the same, and ~/Desktop is the Desktop\n"
+      "  inside it).\n"
       "Each line you type here runs in a fresh shell that is thrown away afterwards,\n"
       "so a cd on its own would be forgotten immediately. Use the ; from the lesson\n"
       "\"Two commands using 1 line\": cd into the folder, then a ; and then, on the same\n"
@@ -670,7 +672,7 @@ static char out_file[PATH_MAX];       /* scratch_root/out: captured output */
 static char diag_file[PATH_MAX];      /* scratch_root/diag: what a lesson's diagnosis printed */
 
 static void become_shell(const char *script, const char *dir, const char *cmd_text) {
-    if (chdir(dir) != 0) _exit(126);
+    if (chdir(dir) != 0) { fprintf(stderr, "shell-tutor: the scratch folder %s is gone.\n", dir); _exit(126); }
     setenv("OUT", out_file, 1);
     setenv("CMD", cmd_text ? cmd_text : "", 1);
     signal(SIGINT, SIG_DFL);   /* the tutor ignores Ctrl-C; the command must not */
@@ -936,6 +938,10 @@ static int run_lesson(int i, int review) {
             printf("Type it yourself to move on (the scratch files are reset), or skip. Either way this one comes around again later.\n");
             reset_work_dir();
             continue;
+        }
+        if (access(work_dir, F_OK) != 0) {   /* something outside the tutor removed it */
+            printf("%sThe scratch folder had disappeared; made a fresh one.%s\n", DIM, RESET);
+            reset_work_dir();
         }
         int status = run_in_terminal(input, work_dir, out_file, input);
         show_output(status);
