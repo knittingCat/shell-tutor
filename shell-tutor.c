@@ -414,7 +414,9 @@ static const Lesson BASIC[] = {
       "  a ; b runs a, then b, no matter what.\n"
       "  a && b runs b only if a succeeded.\n"
       "  a || b runs b only if a failed.\n"
-      "Commands report success by exiting with status 0.",
+      "Commands report success by exiting with status 0.\n"
+      "Both at once: a && b || c runs b if a succeeded, c if it failed. (One\n"
+      "catch: || looks at whatever ran last, so if b itself fails, c runs too.)",
       "Try to cat a file that doesn't exist (nope.txt) and print missing only if that fails.",
       "grep -q '^missing$' \"$OUT\" && [[ \"$CMD\" == *'||'* ]]",
       "cat nope.txt || echo missing",
