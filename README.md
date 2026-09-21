@@ -2,7 +2,7 @@
 
 Learn the Unix shell by doing. `shell-tutor` walks you through 43 short lessons (then `shell-tutor --advanced` through 35 more, and `shell-tutor --github` through 25 on git and GitHub) — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
 
-Your commands run in a scratch folder that shell-tutor fills with example files, so nothing you try can touch your own files. A check runs after every command to see whether the task was done. Job-control lessons (Ctrl-Z, `fg`, `bg`, `&`, `kill %1`) can't be exercised inside a scratch shell, so those are short quizzes.
+Your commands run in a scratch directory that shell-tutor fills with example files, so nothing you try can touch your own files. A check runs after every command to see whether the task was done. Job-control lessons (Ctrl-Z, `fg`, `bg`, `&`, `kill %1`) can't be exercised inside a scratch shell, so those are short quizzes.
 
 ## Install
 
@@ -44,7 +44,7 @@ Two things are different at the advanced prompt: a command may span lines (a lin
 
 ## The third tier
 
-`shell-tutor --github` is 25 lessons on git and GitHub, meant for after the other two. The scratch folder holds small repositories built fresh for each lesson and a pretend GitHub (bare repositories `remote.git` and `shared.git`), so `clone`, `push` and `pull` are real commands with real results and nothing leaves the machine. Covered: what a commit is, `init`, `status`, `add`, `commit`, `log`, `diff`, `restore`, `.gitignore`, `add -A`, `--amend`, branches, `merge`, conflicts (quiz), `stash`, remotes, `clone`, `remote -v`, `push`, `pull`, putting a project on GitHub, HTTPS vs SSH, fork and pull request, the `gh` CLI, and what must never be pushed (all quizzes where GitHub itself would be needed). Lessons that start inside a repository show its name in the prompt (`project $`). Progress is in `~/.shell-tutor/progress-github`.
+`shell-tutor --github` is 25 lessons on git and GitHub, meant for after the other two. The scratch directory holds small repositories built fresh for each lesson and a pretend GitHub (bare repositories `remote.git` and `shared.git`), so `clone`, `push` and `pull` are real commands with real results and nothing leaves the machine. Covered: what a commit is, `init`, `status`, `add`, `commit`, `log`, `diff`, `restore`, `.gitignore`, `add -A`, `--amend`, branches, `merge`, conflicts (quiz), `stash`, remotes, `clone`, `remote -v`, `push`, `pull`, putting a project on GitHub, HTTPS vs SSH, fork and pull request, the `gh` CLI, and what must never be pushed (all quizzes where GitHub itself would be needed). Lessons that start inside a repository show its name in the prompt (`project $`). Progress is in `~/.shell-tutor/progress-github`.
 
 The tutor runs every command in `zsh -f`, the Mac's default shell; the lessons say so where zsh and bash differ (`echo` and `\n`, the startup file).
 

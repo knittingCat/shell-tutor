@@ -58,7 +58,7 @@ typedef struct {
     const char *answer;   /* RUN: a command that passes. QUIZ: explanation shown after answering */
     const char *options;  /* QUIZ only: choices separated by '\n' */
     const char *diagnose; /* RUN, optional: zsh snippet run after a failed check; whatever it prints is shown */
-    const char *dir;      /* RUN, optional: sub-folder of the scratch dir the command, check and diagnose run in */
+    const char *dir;      /* RUN, optional: sub-directory of the scratch dir the command, check and diagnose run in */
 } Lesson;
 
 /*
@@ -71,18 +71,18 @@ static const Lesson BASIC[] = {
     { "pwd", RUN, "Getting around", "Where am I?",
       "Directory is the shell's word for a folder; the two mean exactly the same\n"
       "thing, and you'll see both. The shell always has a current directory: the\n"
-      "folder your commands act on. There's a three-letter command that prints its\n"
+      "directory your commands act on. There's a three-letter command that prints its\n"
       "full path; its name is short for \"print working directory\".",
-      "Find out which folder you are in.",
+      "Find out which directory you are in.",
       "grep -qx \"$(pwd)\" \"$OUT\" && [[ \"$CMD\" == *pwd* ]]",
       "p, then w, then d.",
       "pwd", NULL, NULL },
 
     { "ls", RUN, "Getting around", "What's here?",
       "There's a two-letter command, short for \"list\", that shows the files and\n"
-      "folders in the current directory. Give it a folder name afterwards and it\n"
-      "lists that folder instead.",
-      "See what is in the current directory. (One of the things in it is a folder called docs.)",
+      "directories in the current directory. Give it a directory name afterwards\n"
+      "and it lists that directory instead.",
+      "See what is in the current directory. (One of the things in it is a directory called docs.)",
       "grep -q 'fruits.txt' \"$OUT\" && grep -q 'docs' \"$OUT\"",
       "l, then s.",
       "ls", NULL, NULL },
@@ -135,59 +135,60 @@ static const Lesson BASIC[] = {
       "grep -q '^hello bye$' \"$OUT\" && echo 'That is one echo printing two words. Two separate commands, one per word.'" },
 
     { "paths", RUN, "Getting around", "Paths and the slash",
-      "A path is the address of a file or folder. The slash / does two jobs:\n"
+      "A path is the address of a file or directory. The slash / does two jobs:\n"
       "\n"
-      "  Between names it separates a folder from what's inside it: docs/guide\n"
-      "  means \"the guide folder inside the docs folder\", and docs/readme.md\n"
+      "  Between names it separates a directory from what's inside it: docs/guide\n"
+      "  means \"the guide directory inside the docs directory\", and docs/readme.md\n"
       "  means \"the file readme.md inside docs\". Any command that takes a file or\n"
-      "  folder name takes a path like this instead: ls docs/guide\n"
+      "  directory name takes a path like this instead: ls docs/guide\n"
       "\n"
       "  At the very start it means the root: the top of the whole disk, the one\n"
-      "  folder that contains everything else. /Users/ann/Desktop starts at the\n"
+      "  directory that contains everything else. /Users/ann/Desktop starts at the\n"
       "  root and walks down, so it names the same place no matter where you are.\n"
       "  That's an absolute path.\n"
       "\n"
-      "A path that does NOT start with / is relative: it starts from the folder you\n"
+      "A path that does NOT start with / is relative: it starts from the directory you\n"
       "are in right now (the one pwd prints). Three shortcuts you'll see everywhere:\n"
-      "  . the folder you are in .. the folder above it\n"
-      "  ~ your home folder (where your Desktop and Documents live)\n"
-      "So ~/docs would be a docs folder in your home, not the one here.\n"
+      "  . the directory you are in .. the directory above it\n"
+      "  ~ your home directory (where your Desktop and Documents live)\n"
+      "So ~/docs would be a docs directory in your home, not the one here.\n"
       "\n"
-      "Putting it to use. You know from lesson 2 that ls followed by a folder name\n"
-      "lists that folder: ls docs shows what is in docs. A path can go in the same\n"
-      "place, so ls docs/guide would list the guide folder that is inside docs. This\n"
-      "scratch folder has that: docs contains a folder called guide, and guide\n"
-      "contains one file. Note that ls guide would fail: there is no guide in the\n"
-      "folder you are in, only inside docs, so the path has to go through docs.",
-      "List what is inside the guide folder, using a relative path from here.",
+      "Putting it to use. You know from lesson 2 that ls followed by a directory name\n"
+      "lists that directory: ls docs shows what is in docs. A path can go in the\n"
+      "same place, so ls docs/guide would list the guide directory that is inside\n"
+      "docs. This scratch directory has that: docs contains a directory called\n"
+      "guide, and guide contains one file. Note that ls guide would fail: there is\n"
+      "no guide in the directory you are in, only inside docs, so the path has to\n"
+      "go through docs.",
+      "List what is inside the guide directory, using a relative path from here.",
       "grep -q 'setup.md' \"$OUT\" && [[ \"$CMD\" == *docs/guide* ]]",
       "ls, then the path: docs, slash, guide.",
       "ls docs/guide", NULL,
-      "[[ \"$CMD\" == *'~'* ]] && echo '~ is your home folder; the docs folder is here, in the current folder, so no ~.'; "
-      "[[ \"$CMD\" =~ '(^|[[:space:]])/docs' ]] && echo 'A path starting with / begins at the root of the disk. This docs folder is inside the current folder, so the path starts with docs, no leading slash.'; "
-      "[[ \"$CMD\" =~ '(^|[[:space:]])guide' ]] && echo 'guide is not in this folder; it is inside docs. The path goes through docs first: docs/guide'; "
-      "grep -q 'readme.md' \"$OUT\" && [[ \"$CMD\" != *docs/guide* ]] && echo 'That is the docs folder itself. guide is one level further down: docs/guide'" },
+      "[[ \"$CMD\" == *'~'* ]] && echo '~ is your home directory; the docs directory is here, in the current directory, so no ~.'; "
+      "[[ \"$CMD\" =~ '(^|[[:space:]])/docs' ]] && echo 'A path starting with / begins at the root of the disk. This docs directory is inside the current directory, so the path starts with docs, no leading slash.'; "
+      "[[ \"$CMD\" =~ '(^|[[:space:]])guide' ]] && echo 'guide is not in this directory; it is inside docs. The path goes through docs first: docs/guide'; "
+      "grep -q 'readme.md' \"$OUT\" && [[ \"$CMD\" != *docs/guide* ]] && echo 'That is the docs directory itself. guide is one level further down: docs/guide'" },
 
-    { "cd", RUN, "Getting around", "Going into a folder",
-      "So far you have looked into folders from outside. cd (change directory)\n"
-      "takes you inside one: it makes that folder your current directory, so from\n"
+    { "cd", RUN, "Getting around", "Going into a directory",
+      "So far you have looked into directories from outside. cd (change directory)\n"
+      "takes you inside one: it makes that directory your current directory, so from\n"
       "then on relative paths start there. Nothing on disk moves, only you.\n"
       "  cd FOLDER goes into FOLDER (any path works: relative like docs, or\n"
       "            absolute like /Users/ann).\n"
-      "  cd .. goes up one level. cd on its own goes to your home folder, which\n"
+      "  cd .. goes up one level. cd on its own goes to your home directory, which\n"
       "  the shell also calls ~ (so cd ~ is the same, and ~/Desktop is the Desktop\n"
       "  inside it).\n"
       "Each line you type here runs in a fresh shell that is thrown away afterwards,\n"
       "so a cd on its own would be forgotten immediately. Use the ; from the lesson\n"
-      "\"Two commands using 1 line\": cd into the folder, then a ; and then, on the same\n"
-      "line, the command from lesson 1 that prints where you are.",
-      "Go into the docs folder and show the directory you are then in.",
+      "\"Two commands using 1 line\": cd into the directory, then a ; and then, on\n"
+      "the same line, the command from lesson 1 that prints where you are.",
+      "Go into the docs directory and show the directory you are then in.",
       "grep -qx \"$(pwd)/docs\" \"$OUT\"",
       "cd docs ; pwd",
       "cd docs; pwd", NULL,
-      "[[ \"$CMD\" == *'~'* ]] && echo '~ means your home folder, and the docs folder is not there: it is inside the folder you are in now, so its path is just docs'; "
-      "grep -qi 'no such file' \"$OUT\" && [[ \"$CMD\" != *'~'* ]] && echo 'That folder was not found: relative to here it is called docs, with no slash in front.'; "
-      "grep -qi 'not a directory' \"$OUT\" && echo 'cd can only go into a folder, and that path names a file. Stop at the folder: cd docs'; "
+      "[[ \"$CMD\" == *'~'* ]] && echo '~ means your home directory, and the docs directory is not there: it is inside the directory you are in now, so its path is just docs'; "
+      "grep -qi 'no such file' \"$OUT\" && [[ \"$CMD\" != *'~'* ]] && echo 'That directory was not found: relative to here it is called docs, with no slash in front.'; "
+      "grep -qi 'not a directory' \"$OUT\" && echo 'cd can only go into a directory, and that path names a file. Stop at the directory: cd docs'; "
       "[[ \"$CMD\" == *cd* ]] || echo 'You never changed directory: start with cd docs.'; "
       "[[ \"$CMD\" == *cd* && \"$CMD\" != *pwd* ]] && echo 'Nothing shows where you ended up: add ; pwd on the same line after the cd.'" },
 
@@ -228,18 +229,18 @@ static const Lesson BASIC[] = {
       "file. And a log may keep growing for days.",
       "a) press q\nb) press Ctrl-C\nc) wait for the file to stop growing\nd) type exit", NULL },
 
-    { "mkdir", RUN, "Making and changing files", "Make a folder",
+    { "mkdir", RUN, "Making and changing files", "Make a directory",
       "  mkdir NAME creates a directory.\n"
       "  mkdir -p a/b/c creates the whole chain at once.",
-      "Create a folder called photos.",
+      "Create a directory called photos.",
       "[ -d photos ]",
       "mkdir, then the name.",
       "mkdir photos", NULL,
-      "[ -e photos ] || echo 'There is no photos folder yet.'; [ -f photos ] && echo 'photos exists but it is a file, not a folder: mkdir makes folders.'" },
+      "[ -e photos ] || echo 'There is no photos directory yet.'; [ -f photos ] && echo 'photos exists but it is a file, not a directory: mkdir makes directories.'" },
 
     { "cp", RUN, "Making and changing files", "Copy a file",
-      "  cp SOURCE DEST copies a file. DEST can be a new file name or a folder.\n"
-      "  cp -r FOLDER DEST copies a whole folder.",
+      "  cp SOURCE DEST copies a file. DEST can be a new file name or a directory.\n"
+      "  cp -r FOLDER DEST copies a whole directory.",
       "Make a copy of fruits.txt called fruits-backup.txt.",
       "[ -f fruits-backup.txt ] && cmp -s fruits.txt fruits-backup.txt",
       "cp fruits.txt <new name>",
@@ -247,7 +248,7 @@ static const Lesson BASIC[] = {
       "[ -e fruits-backup.txt ] || echo 'No file called fruits-backup.txt exists yet.'; [ -f fruits.txt ] || echo 'fruits.txt is gone: that was a move, not a copy. Use cp.'" },
 
     { "mv", RUN, "Making and changing files", "Rename or move",
-      "  mv OLD NEW renames a file, or moves it if NEW is a folder.\n"
+      "  mv OLD NEW renames a file, or moves it if NEW is a directory.\n"
       "There is no separate rename command: a rename is a move.",
       "Rename notes.txt to todo.txt.",
       "[ -f todo.txt ] && [ ! -e notes.txt ]",
@@ -257,7 +258,7 @@ static const Lesson BASIC[] = {
 
     { "rm", RUN, "Making and changing files", "Delete",
       "  rm FILE deletes a file. There is no trash and no undo.\n"
-      "  rm -r FOLDER deletes a folder and everything inside it.\n"
+      "  rm -r FOLDER deletes a directory and everything inside it.\n"
       "Be careful with rm: it does exactly what you say, immediately.",
       "Delete the file called old.log.",
       "[ ! -e old.log ] && [ -f fruits.txt ]",
@@ -336,15 +337,15 @@ static const Lesson BASIC[] = {
 
     { "find", RUN, "Searching", "Find files by name",
       "  find . -name 'PATTERN' searches the current directory (.) and every\n"
-      "folder inside it for names matching PATTERN. In a pattern, * stands for\n"
+      "directory inside it for names matching PATTERN. In a pattern, * stands for\n"
       "\"any characters\", so '*.txt' means \"anything ending in .txt\". It only\n"
       "stands in where you put it: '*fruits' is names ending in fruits (not\n"
       "fruits.txt), 'fruits*' names starting with it, '*fruits*' names containing\n"
       "it anywhere.\n"
       "The quotes matter: the shell itself also knows *, and before running a\n"
       "command it swaps an unquoted *.txt for the matching names in the current\n"
-      "folder only. Quoted, the pattern reaches find untouched, and find does the\n"
-      "matching in every folder.\n"
+      "directory only. Quoted, the pattern reaches find untouched, and find does the\n"
+      "matching in every directory.\n"
       "-name is one test of several. Plain find . lists everything below you.\n"
       "  -iname 'PATTERN' matches ignoring case (README.MD too)\n"
       "  -type d only directories, -type f only files\n"
@@ -357,12 +358,12 @@ static const Lesson BASIC[] = {
       "grep -q 'docs/readme.md' \"$OUT\" && grep -q 'docs/guide/setup.md' \"$OUT\" && ! grep -q 'fruits.txt' \"$OUT\"",
       "find . -name '*.md'",
       "find . -name '*.md'", NULL,
-      "grep -q 'setup.md' \"$OUT\" || echo 'docs/guide/setup.md was not found: find searches every folder below the one you give it (start from .).'; grep -q 'fruits.txt' \"$OUT\" && echo 'fruits.txt matched too: the -name pattern should only match .md.'" },
+      "grep -q 'setup.md' \"$OUT\" || echo 'docs/guide/setup.md was not found: find searches every directory below the one you give it (start from .).'; grep -q 'fruits.txt' \"$OUT\" && echo 'fruits.txt matched too: the -name pattern should only match .md.'" },
 
     { "grep-r", RUN, "Searching", "Search inside files",
       "You met grep in the Pipes section, picking lines out of one file. Given a\n"
-      "folder instead of a file it refuses, unless you add -r (recursive): then it\n"
-      "looks inside every file under that folder, and prints each matching line\n"
+      "directory instead of a file it refuses, unless you add -r (recursive): then it\n"
+      "looks inside every file under that directory, and prints each matching line\n"
       "with the name of the file it came from in front.\n"
       "  grep -r WORD FOLDER\n"
       "Two more options: -i ignores case, so it matches Install and INSTALL too.\n"
@@ -371,18 +372,18 @@ static const Lesson BASIC[] = {
       "grep -q 'setup.md' \"$OUT\" && ! grep -q 'readme.md' \"$OUT\"",
       "grep -ri install docs",
       "grep -ri install docs", NULL,
-      "grep -q 'setup.md' \"$OUT\" || echo 'setup.md was not reported: it says INSTALL in capitals, so ignore case with -i, and search the docs folder recursively with -r.'" },
+      "grep -q 'setup.md' \"$OUT\" || echo 'setup.md was not reported: it says INSTALL in capitals, so ignore case with -i, and search the docs directory recursively with -r.'" },
 
     { "chmod", RUN, "Scripts", "Make a script runnable",
       "A shell script is a file of commands; hello.sh here is one. Running it\n"
       "takes two steps.\n"
       "  1. Give the file permission to be run: chmod +x FILE (change mode, add\n"
       "     execute). A file made with an editor or > does not have it.\n"
-      "  2. Run it by typing its path: ./FILE. You know . (the folder you are\n"
+      "  2. Run it by typing its path: ./FILE. You know . (the directory you are\n"
       "     in) and / (joins the parts of a path), so ./FILE is \"FILE, starting\n"
-      "     from this folder\": the same file plain FILE names for cat or ls.\n"
+      "     from this directory\": the same file plain FILE names for cat or ls.\n"
       "     Typing the bare name does not run it, because the shell looks for\n"
-      "     commands only in its list of program folders, not where you are;\n"
+      "     commands only in its list of program directories, not where you are;\n"
       "     the ./ says \"no, this one, right here\".\n"
       "So for a script called go.sh: chmod +x go.sh, then ./go.sh. Here the two\n"
       "go on one line with ; between them, since each line is a fresh shell.",
@@ -599,18 +600,18 @@ static const Lesson BASIC[] = {
       "ln -s docs/readme.md latest", NULL,
       "[ -e latest ] || echo 'Nothing called latest exists yet.'; [ -e latest ] && [ ! -L latest ] && echo 'latest is a copy, not a link: use ln -s.'; [ -L latest ] && [ \"$(readlink latest)\" != docs/readme.md ] && echo \"latest points to $(readlink latest), not docs/readme.md: the target comes first, the link name second.\"" },
 
-    { "tar", RUN, "Links and archives", "Bundle a folder",
+    { "tar", RUN, "Links and archives", "Bundle a directory",
       "  tar -czf NAME.tar.gz FOLDER packs FOLDER into one compressed file.\n"
       "  tar -xzf NAME.tar.gz unpacks it. -t instead of -x just lists it.\n"
       "c=create, x=extract, z=gzip, f=file name follows.",
-      "Pack the docs folder into docs.tar.gz.",
+      "Pack the docs directory into docs.tar.gz.",
       "[ -f docs.tar.gz ] && tar -tzf docs.tar.gz | grep -q 'docs/readme.md'",
       "tar -czf docs.tar.gz docs",
       "tar -czf docs.tar.gz docs", NULL,
-      "[ -e docs.tar.gz ] || echo 'No docs.tar.gz was created: tar -czf docs.tar.gz <folder>.'" },
+      "[ -e docs.tar.gz ] || echo 'No docs.tar.gz was created: tar -czf docs.tar.gz <directory>.'" },
 
     { "which", RUN, "Finding programs", "Where a command lives",
-      "Commands are files too. The shell finds them by searching the folders listed\n"
+      "Commands are files too. The shell finds them by searching the directories listed\n"
       "in the PATH variable, in order. which NAME prints the one it would use.\n"
       "  echo $PATH shows the list, separated by colons.",
       "Print the full path of the ls program.",
@@ -847,18 +848,18 @@ static const Lesson ADVANCED[] = {
 
     { "path", RUN, "Your shell setup", "PATH: where commands are found",
       "When you type a command name, the shell looks for a program of that name\n"
-      "in each folder listed in PATH, in order, separated by colons:\n"
+      "in each directory listed in PATH, in order, separated by colons:\n"
       "  echo $PATH\n"
-      "That is why ./script.sh needs the ./ (the current folder is not in PATH)\n"
-      "and why your own commands live in a folder such as ~/bin: add it to the\n"
+      "That is why ./script.sh needs the ./ (the current directory is not in PATH)\n"
+      "and why your own commands live in a directory such as ~/bin: add it to the\n"
       "front and they run by name from anywhere:\n"
       "  PATH=\"$HOME/bin:$PATH\"\n"
-      "Here there is a bin folder with an executable called hi inside.",
-      "Put this folder's bin at the front of PATH, then run hi by its name alone.",
+      "Here there is a bin directory with an executable called hi inside.",
+      "Put this directory's bin at the front of PATH, then run hi by its name alone.",
       "grep -q 'hi from bin' \"$OUT\" && [[ \"$CMD\" == *PATH* ]] && [[ \"$CMD\" != *'bin/hi'* ]]",
       "PATH=\"$PWD/bin:$PATH\"; hi",
       "PATH=\"$PWD/bin:$PATH\"; hi", NULL,
-      "[[ \"$CMD\" == *'bin/hi'* ]] && echo 'That runs it by path. The point is to run plain hi, after putting bin in PATH.'; grep -q 'command not found' \"$OUT\" && echo 'hi was not found: PATH must contain the bin folder here, e.g. PATH=\"$PWD/bin:$PATH\", on the same line since each line is a fresh shell.'" },
+      "[[ \"$CMD\" == *'bin/hi'* ]] && echo 'That runs it by path. The point is to run plain hi, after putting bin in PATH.'; grep -q 'command not found' \"$OUT\" && echo 'hi was not found: PATH must contain the bin directory here, e.g. PATH=\"$PWD/bin:$PATH\", on the same line since each line is a fresh shell.'" },
 
     { "alias", RUN, "Your shell setup", "Aliases",
       "An alias is a short name for a longer command:\n"
@@ -1078,13 +1079,13 @@ static const Lesson ADVANCED[] = {
       "[[ \"$CMD\" == *diff* ]] || echo 'The command is diff.'" },
 
     { "du", RUN, "Handy tools", "Disk space",
-      "  du -sh FOLDER  the size of a folder and everything in it (s: one\n"
+      "  du -sh FOLDER  the size of a directory and everything in it (s: one\n"
       "                 summary line, h: human units like 4.0K, 12M, 1.5G)\n"
-      "  du -sh *       one line per item in the current folder\n"
+      "  du -sh *       one line per item in the current directory\n"
       "  df -h          how full each disk is",
-      "Show how much space the docs folder takes, as a single human-readable line.",
+      "Show how much space the docs directory takes, as a single human-readable line.",
       "[[ \"$CMD\" == *du* ]] && [ \"$(wc -l < \"$OUT\")\" -eq 1 ] && grep -q docs \"$OUT\"",
-      "du with -s and -h, then the folder.",
+      "du with -s and -h, then the directory.",
       "du -sh docs", NULL,
       "[[ \"$CMD\" == *du* ]] || echo 'The command is du.'; [ \"$(wc -l < \"$OUT\")\" -gt 1 ] && echo 'Several lines came out: -s gives one summary line.'" },
 
@@ -1105,8 +1106,8 @@ static const Lesson ADVANCED[] = {
       "works there. exit comes back.\n"
       "  scp FILE USER@HOST:PATH copies a file there; swap the two to copy\n"
       "back. The colon separates the machine from the path on it; a colon with\n"
-      "nothing after it means the home folder.",
-      "Copy report.pdf from this Mac into the home folder of user ann on the machine box.example.com. Which command?",
+      "nothing after it means the home directory.",
+      "Copy report.pdf from this Mac into the home directory of user ann on the machine box.example.com. Which command?",
       "a",
       "scp, source first, then destination with a colon.",
       "scp copies; the source comes first; the destination is user@host: with the path after the colon, and nothing after the colon means home.",
@@ -1119,29 +1120,29 @@ static const Lesson GITHUB[] = {
     /* ----- Git basics ----- */
 
     { "git-what", QUIZ, "Git basics", "What git keeps",
-      "git is a program that keeps the history of a folder. You tell it, at\n"
-      "moments of your choosing, \"remember the folder as it is now\"; each such\n"
-      "snapshot is a commit, with a message, your name and the time. The folder\n"
+      "git is a program that keeps the history of a directory. You tell it, at\n"
+      "moments of your choosing, \"remember the directory as it is now\"; each such\n"
+      "snapshot is a commit, with a message, your name and the time. The directory\n"
       "with its history is a repository (repo). The history lives in a hidden\n"
-      ".git folder inside it; nothing is sent anywhere unless you ask.\n"
+      ".git directory inside it; nothing is sent anywhere unless you ask.\n"
       "GitHub is a website that stores copies of repositories, so you can back\n"
       "them up, work from two machines, or work with other people.",
       "What does one commit contain?",
       "a",
       "A commit is a snapshot, not a diff of one file.",
-      "A commit records the whole tracked folder as it was, plus the message, author and time. git shows you differences between commits, but what it stores is snapshots.",
-      "a) a snapshot of every tracked file, with a message, author and time\nb) only the one file that changed last\nc) a copy of the folder on GitHub\nd) a zip file of the folder", NULL },
+      "A commit records the whole tracked directory as it was, plus the message, author and time. git shows you differences between commits, but what it stores is snapshots.",
+      "a) a snapshot of every tracked file, with a message, author and time\nb) only the one file that changed last\nc) a copy of the directory on GitHub\nd) a zip file of the directory", NULL },
 
     { "git-init", RUN, "Git basics", "Starting a repository",
-      "  git init turns the current folder into a repository: it creates the\n"
-      "hidden .git folder where the history will live. The files are untouched\n"
+      "  git init turns the current directory into a repository: it creates the\n"
+      "hidden .git directory where the history will live. The files are untouched\n"
       "and nothing is remembered yet; that takes a commit. You are in app, a\n"
-      "plain folder with two files.",
-      "Make this folder a git repository.",
+      "plain directory with two files.",
+      "Make this directory a git repository.",
       "[ -d .git ]",
       "git init",
       "git init", NULL,
-      "[ -d .git ] || echo 'There is no .git folder yet: git init creates it.'", "app" },
+      "[ -d .git ] || echo 'There is no .git directory yet: git init creates it.'", "app" },
 
     { "git-status", RUN, "Git basics", "What has changed",
       "  git status is the command you will type most. It says which branch you\n"
@@ -1159,7 +1160,7 @@ static const Lesson GITHUB[] = {
       "A commit does not take every change automatically. First you stage the\n"
       "changes that belong together, then you commit what is staged.\n"
       "  git add FILE stages a file (new or changed).\n"
-      "  git add . stages everything in the current folder and below.\n"
+      "  git add . stages everything in the current directory and below.\n"
       "git status then lists it under \"Changes to be committed\". Staging is\n"
       "reversible: git restore --staged FILE takes it out again.",
       "notes.txt is new and untracked. Stage it, and nothing else.",
@@ -1191,7 +1192,7 @@ static const Lesson GITHUB[] = {
       "[[ \"$CMD\" == *log* ]] || echo 'The command is git log.'; grep -q '^Author:' \"$OUT\" && echo 'That is the long form: --oneline makes it one line per commit.'", "project" },
 
     { "git-diff", RUN, "Git basics", "What exactly changed",
-      "  git diff shows the changes in the working folder that are not staged\n"
+      "  git diff shows the changes in the working directory that are not staged\n"
       "yet, line by line: lines starting with - were removed, + added.\n"
       "  git diff --staged shows what is staged instead.\n"
       "  git diff ID1 ID2 compares two commits.\n"
@@ -1204,7 +1205,7 @@ static const Lesson GITHUB[] = {
 
     { "git-restore", RUN, "Git basics", "Throwing a change away",
       "  git restore FILE puts a file back as it is in the last commit,\n"
-      "discarding the changes in the working folder. There is no undo for this,\n"
+      "discarding the changes in the working directory. There is no undo for this,\n"
       "which is exactly what makes it useful: experiment freely, then restore.\n"
       "(Older guides say git checkout -- FILE, which does the same.)",
       "Discard the uncommitted change to main.py.",
@@ -1296,11 +1297,11 @@ static const Lesson GITHUB[] = {
       "a) run git merge again\nb) delete main.py and restart\nc) edit main.py to the right content, remove the markers, git add it, then commit\nd) push to GitHub so it resolves the conflict", NULL },
 
     { "git-stash", RUN, "Git basics", "Setting changes aside",
-      "Half-way through a change you need a clean folder, for a quick fix or to\n"
+      "Half-way through a change you need a clean directory, for a quick fix or to\n"
       "switch branches. git stash takes the uncommitted changes away and stores\n"
-      "them; the folder is back at the last commit. git stash pop brings them\n"
+      "them; the directory is back at the last commit. git stash pop brings them\n"
       "back. git stash list shows what is stored.",
-      "Set the uncommitted change to main.py aside without committing it, so that the folder is clean.",
+      "Set the uncommitted change to main.py aside without committing it, so that the directory is clean.",
       "git diff --quiet -- main.py && git stash list | grep -q stash",
       "git stash",
       "git stash", NULL,
@@ -1323,16 +1324,16 @@ static const Lesson GITHUB[] = {
 
     { "git-clone", RUN, "GitHub and remotes", "Getting a copy: clone",
       "  git clone URL makes a complete copy of a repository, with all its\n"
-      "history, in a new folder named after it, and remembers where it came from\n"
-      "as the remote origin. A second word picks a different folder name.\n"
+      "history, in a new directory named after it, and remembers where it came from\n"
+      "as the remote origin. A second word picks a different directory name.\n"
       "On GitHub the URL is on the green Code button, such as\n"
       "https://github.com/USER/REPO.git. Here remote.git stands in for a\n"
       "repository on GitHub.",
-      "Get a working copy of remote.git into a folder called copy.",
+      "Get a working copy of remote.git into a directory called copy.",
       "[ -d copy/.git ] && [ -f copy/README.md ]",
       "git clone remote.git copy",
       "git clone remote.git copy", NULL,
-      "[ -d remote.git/.git ] && echo 'That was not it: remote.git is the source, not the result.'; [ -d copy ] || echo 'No copy folder appeared: git clone SOURCE copy'" },
+      "[ -d remote.git/.git ] && echo 'That was not it: remote.git is the source, not the result.'; [ -d copy ] || echo 'No copy directory appeared: git clone SOURCE copy'" },
 
     { "git-remote", RUN, "GitHub and remotes", "Where does it push to?",
       "  git remote -v lists the remotes a repository knows and their URLs\n"
@@ -1384,7 +1385,7 @@ static const Lesson GITHUB[] = {
       "a",
       "Connect, then push.",
       "Add GitHub as the remote origin, then push with -u so main tracks it. Cloning would make a second, empty copy; pulling gets nothing from an empty repository.",
-      "a) git remote add origin git@github.com:you/notes.git, then git push -u origin main\nb) git clone git@github.com:you/notes.git\nc) git pull origin main\nd) upload the folder through the website", NULL },
+      "a) git remote add origin git@github.com:you/notes.git, then git push -u origin main\nb) git clone git@github.com:you/notes.git\nc) git pull origin main\nd) upload the directory through the website", NULL },
 
     { "ssh-https", QUIZ, "GitHub and remotes", "HTTPS or SSH",
       "A GitHub URL comes in two forms:\n"
@@ -1421,7 +1422,7 @@ static const Lesson GITHUB[] = {
       "gh is GitHub's own command-line tool (brew install gh). After gh auth\n"
       "login once:\n"
       "  gh repo create NAME --public --source=. --push   makes the GitHub\n"
-      "     repository for the folder you are in, connects and pushes it\n"
+      "     repository for the directory you are in, connects and pushes it\n"
       "  gh pr create      opens a pull request for the current branch\n"
       "  gh pr list, gh pr checkout N, gh issue list ...\n"
       "Everything gh does can be done on the website; gh saves the trip.",
@@ -1435,7 +1436,7 @@ static const Lesson GITHUB[] = {
       "A repository on GitHub, even a private one, is a place other people and\n"
       "programs can reach. Keep out of commits: passwords, API keys and tokens\n"
       "(put them in a file that .gitignore lists, such as .env), big generated\n"
-      "folders (node_modules, build output; they are re-creatable), and large\n"
+      "directories (node_modules, build output; they are re-creatable), and large\n"
       "binaries. And history remembers: removing a secret in a later commit does\n"
       "not unpublish it.",
       "You notice a commit you pushed yesterday contains an API key. What is the right response?",
@@ -1542,7 +1543,7 @@ static char out_file[PATH_MAX];       /* scratch_root/out: captured output */
 static char diag_file[PATH_MAX];      /* scratch_root/diag: what a lesson's diagnosis printed */
 
 static void become_shell(const char *script, const char *dir, const char *cmd_text) {
-    if (chdir(dir) != 0) { fprintf(stderr, "shell-tutor: the scratch folder %s is gone.\n", dir); _exit(126); }
+    if (chdir(dir) != 0) { fprintf(stderr, "shell-tutor: the scratch directory %s is gone.\n", dir); _exit(126); }
     setenv("OUT", out_file, 1);
     setenv("CMD", cmd_text ? cmd_text : "", 1);
     signal(SIGINT, SIG_DFL);   /* the tutor ignores Ctrl-C; the command must not */
@@ -1727,7 +1728,7 @@ static void print_prompt_help(int kind) {
         printf("%sType a letter, or: hint, idk (show the answer), skip, list, quit%s\n", DIM, RESET);
 }
 
-static char lesson_dir[PATH_MAX];   /* work_dir, or the lesson's sub-folder of it */
+static char lesson_dir[PATH_MAX];   /* work_dir, or the lesson's sub-directory of it */
 static char lesson_prompt[PATH_MAX];
 
 /* Reads a raw line without trimming (here-document bodies keep their indentation). */
@@ -1872,20 +1873,20 @@ static int run_lesson(int i, int review) {
         }
         if (access(work_dir, F_OK) != 0) {
             if (access(scratch_root, F_OK) != 0)
-                printf("%sThe tutor's whole scratch folder (%s) was deleted while the tutor was running.\n"
-                       "That was not this tutor: another terminal window, or a cleanup of the temporary folders.\n"
+                printf("%sThe tutor's whole scratch directory (%s) was deleted while the tutor was running.\n"
+                       "That was not this tutor: another terminal window, or a cleanup of the temporary directories.\n"
                        "Made a fresh one.%s\n", YELLOW, scratch_root, RESET);
             else
-                printf("%sThe scratch folder (%s) was deleted between two of your commands.\n"
+                printf("%sThe scratch directory (%s) was deleted between two of your commands.\n"
                        "Nothing typed here did that, so it came from outside: another terminal window,\n"
-                       "the Finder, or a cleanup of the temporary folders. Made a fresh one.%s\n", YELLOW, work_dir, RESET);
+                       "the Finder, or a cleanup of the temporary directories. Made a fresh one.%s\n", YELLOW, work_dir, RESET);
             if (access(scratch_root, F_OK) != 0) mkdir(scratch_root, 0700);
             reset_work_dir();
         }
         int status = run_in_terminal(input, lesson_dir, out_file, input);
         show_output(status);
         if (access(work_dir, F_OK) != 0) {
-            printf("%sThat command deleted the scratch folder itself, the folder you were standing in.\n"
+            printf("%sThat command deleted the scratch directory itself, the directory you were standing in.\n"
                    "Made a fresh one for the next try.%s\n", YELLOW, RESET);
             reset_work_dir();
         }
@@ -2077,12 +2078,12 @@ int main(int argc, char **argv) {
     atexit(remove_scratch);
     signal(SIGINT, SIG_IGN);   /* Ctrl-C at the tutor prompt shouldn't kill the tutor; it still stops a running command */
 
-    printf("%s%sshell-tutor%s%s — commands run in a scratch folder (%s), never in your files.\n",
+    printf("%s%sshell-tutor%s%s — commands run in a scratch directory (%s), never in your files.\n",
            BOLD, CYAN, tier == TIER_ADVANCED ? " (advanced)" : tier == TIER_GITHUB ? " (git and GitHub)" : "", RESET, work_dir);
     int any_done = 0;
     for (int k = 0; k < LESSON_COUNT; k++) any_done += done[k];
     if (!any_done && tier == TIER_GITHUB) {
-        printf("\nThe third tier: git, and GitHub. It assumes the other two. The scratch folder\n"
+        printf("\nThe third tier: git, and GitHub. It assumes the other two. The scratch directory\n"
                "holds small repositories made for each lesson, and a pretend GitHub (bare\n"
                "repositories called remote.git and shared.git) to push to and pull from, so\n"
                "every command here is real and nothing leaves this computer. Some lessons\n"
