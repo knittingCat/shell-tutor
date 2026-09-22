@@ -424,6 +424,9 @@ static const Lesson BASIC[] = {
       "[[ \"$CMD\" == *'||'* ]] || echo 'Use || between the two commands: the second runs only if the first fails.'; grep -q '^missing$' \"$OUT\" || echo 'missing was not printed.'" },
 
     { "ctrl-z", QUIZ, "Jobs", "Ctrl-Z",
+      "These lessons use one new command to stand for a slow one: sleep N does\n"
+      "nothing for N seconds, then finishes. sleep 60 is a command that takes a\n"
+      "minute, without needing a real minute-long task.\n"
       "While a command is running in the foreground, the terminal is busy: you can't\n"
       "type another command until it finishes. Ctrl-Z suspends (pauses) the running\n"
       "program and gives you the prompt back. The program is now a job, and\n"
