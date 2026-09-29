@@ -431,7 +431,9 @@ static const Lesson BASIC[] = {
       "type another command until it finishes. Ctrl-Z suspends (pauses) the running\n"
       "program and gives you the prompt back. The program is now a job, and\n"
       "  jobs lists them.",
-      "You run sleep 60 and press Ctrl-Z. What happens?",
+      "Try it yourself first, in a real terminal (not this one): run sleep 60,\n"
+      "press Ctrl-Z, then run jobs and read what it prints.\n"
+      "Then answer here: you run sleep 60 and press Ctrl-Z. What happens?",
       "b",
       "Suspended is not the same as stopped for good.",
       "The sleep is paused mid-way, listed by jobs as \"suspended\", and you get a prompt.\n"
@@ -443,9 +445,14 @@ static const Lesson BASIC[] = {
       "  fg in the foreground: you are back inside it, as if you never stopped it.\n"
       "  bg in the background: it keeps running but you keep the prompt.\n"
       "Both take a job spec like %1 (job number 1, from jobs). On their own they\n"
-      "act on the most recent job.",
-      "You suspended a long-running sleep with Ctrl-Z and want it to keep going\n"
-      "while you do other things in the same terminal. Which command?",
+      "act on the most recent job: jobs marks it with a +, the next most recent\n"
+      "with a -, and any older ones with neither.",
+      "Try it yourself: run sleep 100, Ctrl-Z it, then run sleep 200 and Ctrl-Z\n"
+      "that too. Run jobs and see which one has the +. That's the one plain fg\n"
+      "or bg would act on.\n"
+      "Then answer here: you suspended a long-running sleep with Ctrl-Z and want\n"
+      "it to keep going while you do other things in the same terminal. Which\n"
+      "command?",
       "c",
       "You want it running AND you want the prompt.",
       "bg resumes the job in the background: the sleep keeps counting down and the\n"
@@ -458,7 +465,9 @@ static const Lesson BASIC[] = {
       "  ./server &\n"
       "The shell prints its job number and process id and gives you the prompt.\n"
       "Its output still lands in your terminal unless you redirect it.",
-      "You run ./server &. What do you get back right away?",
+      "Try it yourself: run sleep 30 &, then run jobs. Look at the job number,\n"
+      "the process id, and the + marker in the output.\n"
+      "Then answer here: you run ./server &. What do you get back right away?",
       "b",
       "Nothing was suspended here — it started running in the background from the start.",
       "The prompt is yours immediately, along with a job number and a process id for\n"
@@ -471,7 +480,10 @@ static const Lesson BASIC[] = {
       "command line. If you typed sleep 8 ; echo done the shell itself runs\n"
       "the sequence, and the shell never suspends: it treats the suspended sleep as\n"
       "finished and moves straight on to echo.",
-      "You type sleep 8 ; echo done and press Ctrl-Z after two seconds. What is printed?",
+      "Try it yourself: run sleep 8 ; echo done, press Ctrl-Z about two seconds\n"
+      "in, and watch what prints and when.\n"
+      "Then answer here: you type sleep 8 ; echo done and press Ctrl-Z after two\n"
+      "seconds. What is printed?",
       "b",
       "The ; chain belongs to the shell.",
       "\"done\" appears immediately: the shell moved on to echo as soon as sleep was\n"
@@ -483,8 +495,11 @@ static const Lesson BASIC[] = {
       "  kill %1 asks job 1 to quit (sends SIGTERM).\n"
       "  kill -9 %1 forces it (SIGKILL) when it ignores the polite request.\n"
       "Ctrl-C does the same as kill for whatever is in the foreground.",
-      "jobs shows [1] + suspended sleep 8 left over from earlier. You don't want it.\n"
-      "Which command removes it without resuming it in the foreground?",
+      "Try it yourself: run sleep 100, Ctrl-Z it, confirm it's there with jobs,\n"
+      "then run kill %1 and jobs again to see it gone.\n"
+      "Then answer here: jobs shows [1] + suspended sleep 8 left over from\n"
+      "earlier. You don't want it. Which command removes it without resuming it\n"
+      "in the foreground?",
       "a",
       "You can kill a job by its job spec.",
       "kill %1 ends it. fg %1 would also make it go away eventually, but by resuming\n"
