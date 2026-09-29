@@ -450,9 +450,9 @@ static const Lesson BASIC[] = {
       "Both take a job spec like %1 (job number 1, from jobs). On their own they\n"
       "act on the most recent job: jobs marks it with a +, the next most recent\n"
       "with a -, and any older ones with neither.",
-      "Try it yourself: run sleep 100, Ctrl-Z it, then run sleep 200 and Ctrl-Z\n"
-      "that too. Run jobs and see which one has the +. That's the one plain fg\n"
-      "or bg would act on.\n"
+      "Try it yourself: you likely still have sleep 60 suspended from the last\n"
+      "lesson (job 1). Run sleep 200 and Ctrl-Z that too, then run jobs and see\n"
+      "which one has the +. That's the one plain fg or bg would act on.\n"
       "Then answer here: you suspended a long-running sleep with Ctrl-Z and want\n"
       "it to keep going while you do other things in the same terminal. Which\n"
       "command?",
