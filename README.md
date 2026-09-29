@@ -6,15 +6,22 @@ Your commands run in a scratch directory that shell-tutor fills with example fil
 
 ## Install
 
+### With tlib
+
 ```bash
 tlib install knittingCat/shell-tutor
+shell-tutor
 ```
 
-Or build it yourself — it's one C file with no dependencies:
+### Without tlib
+
+It's one C file with no dependencies, so all you need is a C compiler (`clang` or `gcc`; on a Mac, `xcode-select --install` provides one). This one command downloads, compiles and installs it:
 
 ```bash
-clang shell-tutor.c -o shell-tutor
+curl -fsSL https://raw.githubusercontent.com/knittingCat/shell-tutor/main/shell-tutor.c | clang -x c - -o /tmp/shell-tutor && sudo mkdir -p /usr/local/bin && sudo mv /tmp/shell-tutor /usr/local/bin/
 ```
+
+Then run `shell-tutor` from anywhere.
 
 ## Use
 
