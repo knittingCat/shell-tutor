@@ -458,12 +458,13 @@ static const Lesson BASIC[] = {
       "  ./server &\n"
       "The shell prints its job number and process id and gives you the prompt.\n"
       "Its output still lands in your terminal unless you redirect it.",
-      "What does fg %1 do?",
-      "d",
-      "%1 is a job spec.",
-      "fg %1 brings job number 1 into the foreground. Plain fg picks the most recent\n"
-      "job; %1, %2 ... choose a specific one from the jobs list.",
-      "a) forks the current shell\nb) runs job 1 again from the start\nc) kills job 1\nd) brings job 1 to the foreground", NULL },
+      "You run ./server &. What do you get back right away?",
+      "b",
+      "Nothing was suspended here — it started running in the background from the start.",
+      "The prompt is yours immediately, along with a job number and a process id for\n"
+      "./server. Unlike Ctrl-Z, nothing was paused first: it never occupied the\n"
+      "foreground at all.",
+      "a) nothing, until ./server exits\nb) the prompt, plus a job number and process id\nc) the output, redirected to a file automatically\nd) a suspended job, the same as Ctrl-Z", NULL },
 
     { "chain-suspend", QUIZ, "Jobs", "What exactly gets suspended",
       "Ctrl-Z suspends the program that is running at that instant, not your whole\n"
