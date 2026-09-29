@@ -430,7 +430,10 @@ static const Lesson BASIC[] = {
       "While a command is running in the foreground, the terminal is busy: you can't\n"
       "type another command until it finishes. Ctrl-Z suspends (pauses) the running\n"
       "program and gives you the prompt back. The program is now a job, and\n"
-      "  jobs lists them.",
+      "  jobs lists them.\n"
+      "The shell also announces it right away: zsh prints \"zsh: suspended sleep\n"
+      "60\", bash prints \"[1]+  Stopped                 sleep 60\". Same thing,\n"
+      "different wording.",
       "Try it yourself first, in a real terminal (not this one): run sleep 60,\n"
       "press Ctrl-Z, then run jobs and read what it prints.\n"
       "Then answer here: you run sleep 60 and press Ctrl-Z. What happens?",
