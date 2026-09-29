@@ -434,8 +434,8 @@ static const Lesson BASIC[] = {
       "The shell also announces it right away: zsh prints \"zsh: suspended sleep\n"
       "60\", bash prints \"[1]+  Stopped                 sleep 60\". Same thing,\n"
       "different wording.",
-      "Try it yourself first, in a real terminal (not this one): run sleep 60,\n"
-      "press Ctrl-Z, then run jobs and read what it prints.\n"
+      "Try it yourself first, in a real terminal (not this one): run sleep 60\n"
+      "and press Ctrl-Z. Read what the shell prints right away.\n"
       "Then answer here: you run sleep 60 and press Ctrl-Z. What happens?",
       "b",
       "Suspended is not the same as stopped for good.",
