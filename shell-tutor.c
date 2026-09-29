@@ -444,13 +444,14 @@ static const Lesson BASIC[] = {
       "  bg in the background: it keeps running but you keep the prompt.\n"
       "Both take a job spec like %1 (job number 1, from jobs). On their own they\n"
       "act on the most recent job.",
-      "You suspended a long copy with Ctrl-Z and want it to keep going while you do\n"
-      "other things in the same terminal. Which command?",
+      "You suspended a long-running sleep with Ctrl-Z and want it to keep going\n"
+      "while you do other things in the same terminal. Which command?",
       "c",
       "You want it running AND you want the prompt.",
-      "bg resumes the job in the background: the copy continues and the prompt is yours.\n"
-      "fg would also resume it, but then the terminal is busy again until it finishes.",
-      "a) fg\nb) jobs\nc) bg\nd) kill %1", NULL },
+      "bg resumes the job in the background: the sleep keeps counting down and the\n"
+      "prompt is yours. fg would also resume it, but then the terminal is busy\n"
+      "again until it finishes.",
+      "a) fg\nb) jobs\nc) bg\nd) Ctrl-Z again", NULL },
 
     { "ampersand", QUIZ, "Jobs", "Starting in the background",
       "Putting & after a command starts it in the background straight away:\n"
