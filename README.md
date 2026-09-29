@@ -1,4 +1,4 @@
-# shell-tutor
+# Shell-Tutor
 
 Learn the Unix shell by doing. `shell-tutor` walks you through 43 short lessons (then `shell-tutor --advanced` through 35 more, and `shell-tutor --github` through 25 on git and GitHub) — moving around, reading files, making and deleting them, redirection, pipes, searching, scripts, and job control — and after each explanation asks you to type a real command.
 
