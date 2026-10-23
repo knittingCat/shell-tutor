@@ -590,10 +590,13 @@ static const Lesson BASIC[] = {
       "grep -q '^banana$' \"$OUT\" && echo 'Still lower case: pipe the file into tr a-z A-Z.'; [[ \"$CMD\" == *'tr'*'fruits.txt' ]] && echo 'tr does not take a file name: feed the file in with cat ... | tr or with < fruits.txt.'" },
 
     { "sort-n", RUN, "Text tools", "Sort numbers as numbers",
-      "sort puts the lines of a file in order. By default it sorts as text, one\n"
-      "character at a time, so 10 comes before 9 (the character 1 sorts before 9).\n"
-      "sort -n sorts as numbers instead, smallest first: 9 then 10.\n"
-      "sort -r reverses the order, so -nr gives numbers biggest first.\n"
+      "sort puts the lines of a file in order. The default direction is always\n"
+      "ascending: A to Z for words, smallest to largest for numbers.\n"
+      "By default it sorts as text, one character at a time, so 10 comes before 9\n"
+      "(the character 1 sorts before 9).\n"
+      "sort -n sorts as numbers instead, still smallest first: 9 then 10.\n"
+      "sort -r reverses the direction (descending), so -nr gives numbers\n"
+      "biggest first.\n"
       "head -n 1 keeps only the first line of what it receives, so putting it\n"
       "after a sort with | gives you the first one in the order you chose:\n"
       "  sort -n scores.txt | head -n 1    prints the smallest number\n"
