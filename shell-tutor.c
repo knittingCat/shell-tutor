@@ -374,7 +374,7 @@ static const Lesson BASIC[] = {
       "grep -q 'setup.md' \"$OUT\" && ! grep -q 'readme.md' \"$OUT\"",
       "grep -ri install docs",
       "grep -ri install docs", NULL,
-      "grep -q 'setup.md' \"$OUT\" || echo 'setup.md was not reported: it says INSTALL in capitals, so ignore case with -i, and search the docs directory recursively with -r.'" },
+      "[[ \"$CMD\" == *find* ]] && echo 'find only lists file NAMES, so grep after it can only match names. To search the text INSIDE the files, use grep itself on the directory.'; grep -q 'setup.md' \"$OUT\" || echo 'setup.md was not reported: it says INSTALL in capitals, so ignore case with -i, and search the docs directory recursively with -r.'" },
 
     { "chmod", RUN, "Scripts", "Make a script runnable",
       "A shell script is a file of commands; hello.sh here is one. Running it\n"
