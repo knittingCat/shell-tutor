@@ -318,7 +318,9 @@ static const Lesson BASIC[] = {
       "  wc -l counts lines (that is the letter l, as in lines, not the digit\n"
       "one). wc -w counts words. wc -c counts bytes.\n"
       "With no option it prints all three. Given a file name it prints the\n"
-      "count and the name; fed through a pipe it prints just the number.",
+      "count and the name; fed through a pipe it prints just the number.\n"
+      "Given several files (wc -l a.txt b.txt) it prints one line for each,\n"
+      "then a last line with the total of all of them.",
       "Print how many lines numbers.txt has, using a pipe so only the number appears.",
       "[[ \"$CMD\" == *'|'* ]] && [ \"$(tr -d ' ' < \"$OUT\")\" = \"20\" ]",
       "cat numbers.txt | wc -l",
