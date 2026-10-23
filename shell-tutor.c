@@ -563,9 +563,16 @@ static const Lesson BASIC[] = {
       "[[ \"$CMD\" == *'$?'* ]] || echo 'Print the special variable $? right after grep, on the same line: ; echo $?'" },
 
     { "cut", RUN, "Text tools", "Pick columns",
-      "people.csv has lines like ada,lovelace,1815 — fields separated by commas.\n"
-      "  cut -d , -f 2 FILE prints field 2 of each line, using , as the delimiter.\n"
-      "  -f 1,3 picks several fields.",
+      "people.csv has one person per line, with the details separated by commas:\n"
+      "  ada,lovelace,1815\n"
+      "Each piece between commas is called a field: here field 1 is ada, field 2\n"
+      "is lovelace and field 3 is 1815.\n"
+      "cut prints only the fields you ask for, from every line of a file:\n"
+      "  cut -d , -f 2 people.csv\n"
+      "-d , tells cut what separates the fields (the delimiter, here a comma).\n"
+      "-f 2 says which field to print. That command prints the second field of\n"
+      "each line, so lovelace and the other last names, one per line.\n"
+      "-f 1,3 picks two fields, and they keep their comma: ada,1815",
       "Print just the birth years (the third field) from people.csv.",
       "[ \"$(cat \"$OUT\")\" = \"$(printf '1815\\n1912\\n1906')\" ]",
       "cut with -d , and -f 3",
