@@ -590,14 +590,19 @@ static const Lesson BASIC[] = {
       "grep -q '^banana$' \"$OUT\" && echo 'Still lower case: pipe the file into tr a-z A-Z.'; [[ \"$CMD\" == *'tr'*'fruits.txt' ]] && echo 'tr does not take a file name: feed the file in with cat ... | tr or with < fruits.txt.'" },
 
     { "sort-n", RUN, "Text tools", "Sort numbers as numbers",
-      "  sort compares text, so 10 comes before 9 (1 is less than 9).\n"
-      "  sort -n compares numerically. -r reverses the order.\n"
-      "  head -n 1 after a sort gives you the smallest or largest.",
+      "sort puts the lines of a file in order. By default it sorts as text, one\n"
+      "character at a time, so 10 comes before 9 (the character 1 sorts before 9).\n"
+      "sort -n sorts as numbers instead, smallest first: 9 then 10.\n"
+      "sort -r reverses the order, so -nr gives numbers biggest first.\n"
+      "head -n 1 keeps only the first line of what it receives, so putting it\n"
+      "after a sort with | gives you the first one in the order you chose:\n"
+      "  sort -n scores.txt | head -n 1    prints the smallest number\n"
+      "(tail -n 1 would instead keep the last line.)",
       "Print the single largest number in scores.txt.",
       "[ \"$(cat \"$OUT\")\" = \"97\" ]",
       "sort -n, reversed, then head -n 1",
       "sort -nr scores.txt | head -n 1", NULL,
-      "n=$(wc -l < \"$OUT\"); [ \"$n\" -eq 1 ] || echo \"That printed $n lines; only the largest number should appear (head -n 1 after sorting).\"; grep -qx '97' \"$OUT\" || echo 'Not 97: plain sort compares text, so 10 sorts before 9 and 97 before 98. Compare as numbers with -n, and reverse with -r.'" },
+      "n=$(wc -l < \"$OUT\"); [ \"$n\" -eq 1 ] || echo \"That printed $n lines; only the largest number should appear (head -n 1 after sorting).\"; grep -qx '97' \"$OUT\" || { if [[ \"$CMD\" =~ sort[[:space:]]+-[a-z]*n && ! \"$CMD\" =~ sort[[:space:]]+-[a-z]*r && \"$CMD\" != *tail* ]]; then echo \"Numbers are sorted, but smallest first, so head -n 1 gives the smallest. Reverse the order with -r (sort -nr), or take the last line with tail -n 1.\"; else echo 'Not 97: plain sort compares text, so 10 sorts before 9. Compare as numbers with -n, and reverse with -r so the largest is first.'; fi; }" },
 
     { "tee", RUN, "Text tools", "Save and see at once",
       "  | tee FILE writes what flows through the pipe into FILE and also passes\n"
