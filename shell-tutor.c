@@ -538,7 +538,7 @@ static const Lesson BASIC[] = {
       "[ -f draft1.txt ] && [ -f draft2.txt ] && [ -f draft3.txt ] && [[ \"$CMD\" == *'{'* ]]",
       "touch draft{1,2,3}.txt",
       "touch draft{1,2,3}.txt", NULL,
-      "for f in draft1.txt draft2.txt draft3.txt; do [ -f $f ] || echo \"$f does not exist yet.\"; done; [[ \"$CMD\" == *'{'* ]] || echo 'Do it in one go with braces: draft{1,2,3}.txt'" },
+      "for f in draft1.txt draft2.txt draft3.txt; do [ -f $f ] || echo \"$f does not exist yet.\"; done; [ -e draft1 ] && echo 'You made draft1, draft2, draft3 without the .txt: put .txt after the closing brace, draft{1,2,3}.txt (rm draft1 draft2 draft3 removes the extras).'; [[ \"$CMD\" == *'{'* ]] || echo 'Do it in one go with braces: draft{1,2,3}.txt'" },
 
     { "stderr", RUN, "Errors and status", "Errors have their own stream",
       "Commands print normal output on stream 1 (stdout) and errors on stream 2\n"
