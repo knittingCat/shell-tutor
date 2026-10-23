@@ -605,7 +605,7 @@ static const Lesson BASIC[] = {
       "[ \"$(cat \"$OUT\")\" = \"97\" ]",
       "sort -n, reversed, then head -n 1",
       "sort -nr scores.txt | head -n 1", NULL,
-      "n=$(wc -l < \"$OUT\"); [ \"$n\" -eq 1 ] || echo \"That printed $n lines; only the largest number should appear (head -n 1 after sorting).\"; grep -qx '97' \"$OUT\" || { if [[ \"$CMD\" =~ sort[[:space:]]+-[a-z]*n && ! \"$CMD\" =~ sort[[:space:]]+-[a-z]*r && \"$CMD\" != *tail* ]]; then echo \"Numbers are sorted, but smallest first, so head -n 1 gives the smallest. Reverse the order with -r (sort -nr), or take the last line with tail -n 1.\"; else echo 'Not 97: plain sort compares text, so 10 sorts before 9. Compare as numbers with -n, and reverse with -r so the largest is first.'; fi; }" },
+      "n=$(wc -l < \"$OUT\"); [ \"$n\" -eq 1 ] || echo \"That printed $n lines; only the largest number should appear (head -n 1 after sorting).\"; grep -qx '97' \"$OUT\" || { s=\"${CMD#*sort}\"; s=\"${s%%|*}\"; if [[ \"$CMD\" != *scores.txt* ]]; then echo 'The task is about scores.txt: that is the file to sort, not another one.'; elif [[ \"$s\" =~ -[a-z]*n && ! \"$s\" =~ -[a-z]*r && \"$CMD\" != *tail* ]]; then echo \"Numbers are sorted, but smallest first, so head -n 1 gives the smallest. Reverse the order with -r (sort -nr), or take the last line with tail -n 1.\"; else echo 'Not 97: plain sort compares text, so 10 sorts before 9. Compare as numbers with -n, and reverse with -r so the largest is first.'; fi; }" },
 
     { "tee", RUN, "Text tools", "Save and see at once",
       "  | tee FILE writes what flows through the pipe into FILE and also passes\n"
