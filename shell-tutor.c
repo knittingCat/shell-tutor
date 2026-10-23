@@ -525,9 +525,15 @@ static const Lesson BASIC[] = {
       "[[ \"$CMD\" == *'*'* ]] || echo 'No wildcard used: *.txt stands for every .txt file here.'; grep -q total \"$OUT\" || [ \"$(tr -d ' \\n' < \"$OUT\")\" = \"$(cat *.txt | wc -l | tr -d ' ')\" ] || echo 'That is not the total: give wc all the .txt files at once, not one.'" },
 
     { "touch", RUN, "Wildcards", "Empty files and brace expansion",
-      "  touch NAME creates an empty file (or just updates the date of an existing one).\n"
-      "  {a,b,c} expands to each option in turn: echo file{1,2}.txt prints\n"
-      "file1.txt file2.txt. It works anywhere in a command.",
+      "touch NAME creates an empty file with that name. It's handy for making\n"
+      "placeholder files to practice on, or a file to fill in later. (On a file\n"
+      "that already exists it changes nothing but its modified date.)\n"
+      "\n"
+      "Braces save typing a list of similar names. Before the command runs, the\n"
+      "shell rewrites {a,b,c} into one word per item, keeping the text around it:\n"
+      "  echo file{1,2}.txt   becomes   echo file1.txt file2.txt\n"
+      "so you can combine it with any command:\n"
+      "  touch file{1,2}.txt  creates file1.txt and file2.txt.",
       "Create three empty files at once: draft1.txt, draft2.txt and draft3.txt.",
       "[ -f draft1.txt ] && [ -f draft2.txt ] && [ -f draft3.txt ] && [[ \"$CMD\" == *'{'* ]]",
       "touch draft{1,2,3}.txt",
