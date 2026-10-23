@@ -519,10 +519,10 @@ static const Lesson BASIC[] = {
       "That's why the find lesson quoted its pattern: to stop this expansion.",
       "Print how many lines all the .txt files here have together (wc -l of all of them at once).\n"
       "wc prints a total line when given several files.",
-      "[[ \"$CMD\" == *'*'* ]] && grep -q 'total' \"$OUT\"",
+      "[[ \"$CMD\" == *'*'* ]] && { grep -q 'total' \"$OUT\" || [ \"$(tr -d ' \\n' < \"$OUT\")\" = \"$(cat *.txt | wc -l | tr -d ' ')\" ]; }",
       "wc -l with a wildcard.",
       "wc -l *.txt", NULL,
-      "[[ \"$CMD\" == *'*'* ]] || echo 'No wildcard used: *.txt stands for every .txt file here.'; grep -q total \"$OUT\" || echo 'No total line: give wc all the .txt files at once, not one.'" },
+      "[[ \"$CMD\" == *'*'* ]] || echo 'No wildcard used: *.txt stands for every .txt file here.'; grep -q total \"$OUT\" || [ \"$(tr -d ' \\n' < \"$OUT\")\" = \"$(cat *.txt | wc -l | tr -d ' ')\" ] || echo 'That is not the total: give wc all the .txt files at once, not one.'" },
 
     { "touch", RUN, "Wildcards", "Empty files and brace expansion",
       "  touch NAME creates an empty file (or just updates the date of an existing one).\n"
