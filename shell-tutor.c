@@ -628,7 +628,10 @@ static const Lesson BASIC[] = {
       "$f stands for whatever f is right now: a.txt the first time round, b.txt\n"
       "the second. Several commands can go between do and done, separated by ;.\n"
       "The list after in can also come from a command: $(find docs -name '*.md')\n"
-      "runs the find first and puts the names it printed there, as the list.",
+      "runs the find first and puts the names it printed there, as the list.\n"
+      "In that find, docs is the folder to search (it looks inside it and all the\n"
+      "folders within it), and -name '*.md' keeps only the files whose names end\n"
+      "in .md. Put a different folder name where docs is to search somewhere else.",
       "For every .md file under docs (use find to list them), print its name followed by its line count.\n"
       "Any format is fine as long as each name and its count appear.",
       "[[ \"$CMD\" == *'for '* ]] && grep -q 'readme.md' \"$OUT\" && grep -q 'setup.md' \"$OUT\" && grep -q '3' \"$OUT\"",
