@@ -617,9 +617,18 @@ static const Lesson BASIC[] = {
       "[ -e sorted.txt ] || echo 'sorted.txt was not written: put | tee sorted.txt after the sort.'; grep -q '^apple$' \"$OUT\" || echo 'Nothing printed on screen: tee passes the output on as well as saving it; > would swallow it.'" },
 
     { "for", RUN, "Loops", "Do something for each file",
+      "A loop repeats a command once for every item in a list. Suppose this folder\n"
+      "holds a.txt and b.txt. Then:\n"
       "  for f in *.txt; do echo \"$f\"; done\n"
-      "runs the part between do and done once per match, with $f set to each name\n"
-      "in turn. Any commands can go in the middle, separated by ;.",
+      "prints a.txt and then b.txt. Read it from left to right:\n"
+      "  for f in *.txt   take the list of names that *.txt matches, and call the\n"
+      "                   current one f (f is just a name for the variable; any\n"
+      "                   word works)\n"
+      "  do ... done      the commands to repeat; here, once per name\n"
+      "$f stands for whatever f is right now: a.txt the first time round, b.txt\n"
+      "the second. Several commands can go between do and done, separated by ;.\n"
+      "The list after in can also come from a command: $(find docs -name '*.md')\n"
+      "runs the find first and puts the names it printed there, as the list.",
       "For every .md file under docs (use find to list them), print its name followed by its line count.\n"
       "Any format is fine as long as each name and its count appear.",
       "[[ \"$CMD\" == *'for '* ]] && grep -q 'readme.md' \"$OUT\" && grep -q 'setup.md' \"$OUT\" && grep -q '3' \"$OUT\"",
