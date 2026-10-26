@@ -49,7 +49,7 @@ At the prompt, besides typing a command (or a letter in a quiz):
 
 Two things are different at the advanced prompt: a command may span lines (a line ending in `\` continues; a here-document `<<EOF` reads until `EOF` alone on a line), and the example files are kept between tries within a lesson, so you can write a script with one command and run it with the next. `reset` gives fresh files.
 
-## The third tier
+## The "third" tier
 
 `shell-tutor --github` is 25 lessons on git and GitHub, meant for after the other two. The scratch directory holds small repositories built fresh for each lesson and a pretend GitHub (bare repositories `remote.git` and `shared.git`), so `clone`, `push` and `pull` are real commands with real results and nothing leaves the machine. Covered: what a commit is, `init`, `status`, `add`, `commit`, `log`, `diff`, `restore`, `.gitignore`, `add -A`, `--amend`, branches, `merge`, conflicts (quiz), `stash`, remotes, `clone`, `remote -v`, `push`, `pull`, putting a project on GitHub, HTTPS vs SSH, fork and pull request, the `gh` CLI, and what must never be pushed (all quizzes where GitHub itself would be needed). Lessons that start inside a repository show its name in the prompt (`project $`). Progress is in `~/.shell-tutor/progress-github`.
 
