@@ -671,10 +671,13 @@ static const Lesson BASIC[] = {
       "[ -e docs.tar.gz ] || echo 'No docs.tar.gz was created: tar -czf docs.tar.gz <directory>.'" },
 
     { "which", RUN, "Finding programs", "Where a command lives",
-      "Commands are files too. The shell finds them by searching the directories listed\n"
-      "in the PATH variable, in order. which NAME prints the one it would use.\n"
-      "  echo $PATH shows the list, separated by colons.",
-      "Print the full path of the ls program.",
+      "Every command you type, like ls or cat, is really a program: a file somewhere on\n"
+      "disk. The shell has a list of folders to look in, stored in a variable called PATH.\n"
+      "  which COMMAND tells you which file the shell would run. For example\n"
+      "  which cat prints: /bin/cat\n"
+      "That means the cat program is the file cat inside the folder /bin.\n"
+      "  echo $PATH prints the folders to look in, separated by colons.",
+      "Use which to print the full location of the ls program.",
       "grep -q '/ls$' \"$OUT\"",
       "which ls",
       "which ls", NULL,
