@@ -1890,12 +1890,13 @@ static void forget(int i) {
 /*
  * During the final review there is no limit on tries, and everything typed is
  * recorded: answers_f gets each attempt with the intended answer beside it,
- * idk_f gets the intended answer of every lesson answered with idk. Both are
- * moved to the home directory when the review ends.
+ * remind_f gets the intended answer of every lesson answered with idk or
+ * answered wrong at least once (once per lesson). Both are moved to the home
+ * directory when the review ends.
  */
 static int final_mode = 0;
-static FILE *answers_f = NULL, *idk_f = NULL;
-static int logged_lesson = -1;
+static FILE *answers_f = NULL, *remind_f = NULL;
+static int logged_lesson = -1, reminded_lesson = -1;
 
 static void log_header(FILE *f, int i) {
     fprintf(f, "\n[%d/%d] %s - %s\n", i + 1, LESSON_COUNT, LESSONS[i].section, LESSONS[i].title);
@@ -1906,23 +1907,31 @@ static void log_intended(FILE *f, const Lesson *l) {
     else fprintf(f, "  intended: %s\n", l->answer);
 }
 
+/* Puts a lesson's intended answer in the cmd-reminders file, once however many misses. */
+static void log_reminder(int i) {
+    if (!remind_f || reminded_lesson == i) return;
+    reminded_lesson = i;
+    log_header(remind_f, i);
+    log_intended(remind_f, &LESSONS[i]);
+    fflush(remind_f);
+}
+
 /* One typed answer: right or wrong; the intended answer follows a right one. */
 static void log_attempt(int i, const char *input, int ok) {
     if (!final_mode || !answers_f) return;
     if (logged_lesson != i) { log_header(answers_f, i); logged_lesson = i; }
     fprintf(answers_f, "  you: %s   (%s)\n", input, ok ? "right" : "wrong");
     if (ok) log_intended(answers_f, &LESSONS[i]);
+    else log_reminder(i);
     fflush(answers_f);
 }
 
 static void log_idk(int i) {
-    if (!final_mode || !answers_f || !idk_f) return;
+    if (!final_mode || !answers_f) return;
     if (logged_lesson != i) { log_header(answers_f, i); logged_lesson = i; }
-    fprintf(answers_f, "  you: idk   (the answer is in the idk file)\n");
-    log_header(idk_f, i);
-    log_intended(idk_f, &LESSONS[i]);
+    fprintf(answers_f, "  you: idk   (the answer is in the cmd-reminders file)\n");
+    log_reminder(i);
     fflush(answers_f);
-    fflush(idk_f);
 }
 
 
@@ -1966,7 +1975,7 @@ static int run_lesson(int i, int review) {
         if (handled == 2) continue;
         if (wants_answer(input)) {
             if (final_mode) {
-                printf("%sOne way:%s  %s\nSaved to your idk file. On to the next one.\n", GREEN, RESET, l->answer);
+                printf("%sOne way:%s  %s\nSaved to your cmd-reminders file. On to the next one.\n", GREEN, RESET, l->answer);
                 log_idk(i);
                 return NEXT;
             }
@@ -2043,7 +2052,7 @@ static int quiz_lesson(int i, int review) {
         if (wants_answer(input)) {
             printf("%sAnswer: %s.%s %s\n", GREEN, l->check, RESET, l->answer);
             if (final_mode) {
-                printf("Saved to your idk file. On to the next one.\n");
+                printf("Saved to your cmd-reminders file. On to the next one.\n");
                 log_idk(i);
                 return NEXT;
             }
@@ -2128,7 +2137,7 @@ static int final_review(void) {
     printf("\n%s%sFinal review%s — all %d lessons, mixed up, no explanations. Anything you miss gets taught again.\n",
            BOLD, YELLOW, RESET, LESSON_COUNT);
     printf("There is no limit on tries here. Your answers are saved with the intended ones, and\n"
-           "anything you answer with idk goes to a separate file. Both end up in your home folder.\n");
+           "anything you get wrong or answer with idk goes to a cmd-reminders file. Both end up in your home folder.\n");
 
     const char *home = getenv("HOME");
     const char *suffix = tier_progress[tier] + strlen("progress");
@@ -2136,21 +2145,21 @@ static int final_review(void) {
     snprintf(dir, sizeof dir, "%s/.shell-tutor", home ? home : ".");
     mkdir(dir, 0700);
     snprintf(tmp_a, sizeof tmp_a, "%s/final-answers%s.txt", dir, suffix);
-    snprintf(tmp_i, sizeof tmp_i, "%s/final-idk%s.txt", dir, suffix);
+    snprintf(tmp_i, sizeof tmp_i, "%s/final-cmd-reminders%s.txt", dir, suffix);
     snprintf(dst_a, sizeof dst_a, "%s/shell-tutor-answers%s.txt", home ? home : ".", suffix);
-    snprintf(dst_i, sizeof dst_i, "%s/shell-tutor-idk%s.txt", home ? home : ".", suffix);
+    snprintf(dst_i, sizeof dst_i, "%s/shell-tutor-cmd-reminders%s.txt", home ? home : ".", suffix);
     answers_f = fopen(tmp_a, "w");
-    idk_f = fopen(tmp_i, "w");
+    remind_f = fopen(tmp_i, "w");
     if (answers_f) fprintf(answers_f, "shell-tutor final review: your answers and the intended ones\n");
-    if (idk_f) fprintf(idk_f, "shell-tutor final review: intended answers for the ones you answered with idk\n");
-    logged_lesson = -1;
+    if (remind_f) fprintf(remind_f, "shell-tutor final review: intended answers for the ones you got wrong or answered with idk\n");
+    logged_lesson = reminded_lesson = -1;
     final_mode = 1;
 
     int result = review_lessons(pool, LESSON_COUNT, LESSON_COUNT);
 
     final_mode = 0;
     if (answers_f) { fclose(answers_f); answers_f = NULL; }
-    if (idk_f) { fclose(idk_f); idk_f = NULL; }
+    if (remind_f) { fclose(remind_f); remind_f = NULL; }
     if (rename(tmp_a, dst_a) == 0 && rename(tmp_i, dst_i) == 0)
         printf("\nSaved %s and %s.\n", dst_a, dst_i);
     else
