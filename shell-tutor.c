@@ -1887,6 +1887,44 @@ static void forget(int i) {
     save_progress();
 }
 
+/*
+ * During the final review there is no limit on tries, and everything typed is
+ * recorded: answers_f gets each attempt with the intended answer beside it,
+ * idk_f gets the intended answer of every lesson answered with idk. Both are
+ * moved to the home directory when the review ends.
+ */
+static int final_mode = 0;
+static FILE *answers_f = NULL, *idk_f = NULL;
+static int logged_lesson = -1;
+
+static void log_header(FILE *f, int i) {
+    fprintf(f, "\n[%d/%d] %s - %s\n", i + 1, LESSON_COUNT, LESSONS[i].section, LESSONS[i].title);
+}
+
+static void log_intended(FILE *f, const Lesson *l) {
+    if (l->kind == QUIZ) fprintf(f, "  intended: %s) %s\n", l->check, l->answer);
+    else fprintf(f, "  intended: %s\n", l->answer);
+}
+
+/* One typed answer: right or wrong; the intended answer follows a right one. */
+static void log_attempt(int i, const char *input, int ok) {
+    if (!final_mode || !answers_f) return;
+    if (logged_lesson != i) { log_header(answers_f, i); logged_lesson = i; }
+    fprintf(answers_f, "  you: %s   (%s)\n", input, ok ? "right" : "wrong");
+    if (ok) log_intended(answers_f, &LESSONS[i]);
+    fflush(answers_f);
+}
+
+static void log_idk(int i) {
+    if (!final_mode || !answers_f || !idk_f) return;
+    if (logged_lesson != i) { log_header(answers_f, i); logged_lesson = i; }
+    fprintf(answers_f, "  you: idk   (the answer is in the idk file)\n");
+    log_header(idk_f, i);
+    log_intended(idk_f, &LESSONS[i]);
+    fflush(answers_f);
+    fflush(idk_f);
+}
+
 
 static void enter_lesson_dir(const Lesson *l) {
     if (l->dir) {
@@ -1927,6 +1965,11 @@ static int run_lesson(int i, int review) {
         if (handled == 1) return result;
         if (handled == 2) continue;
         if (wants_answer(input)) {
+            if (final_mode) {
+                printf("%sOne way:%s  %s\nSaved to your idk file. On to the next one.\n", GREEN, RESET, l->answer);
+                log_idk(i);
+                return NEXT;
+            }
             saw_answer = 1;
             printf("%sOne way:%s  %s\n", GREEN, RESET, l->answer);
             if (review) { printf("Back into the lessons it goes.\n"); forget(i); return NEXT; }
@@ -1954,6 +1997,7 @@ static int run_lesson(int i, int review) {
             reset_work_dir();
         }
         if (run_shell(l->check, lesson_dir, NULL, input) == 0) {
+            log_attempt(i, input, 1);
             if (saw_answer) {
                 printf("%s✓ That's it.%s You'll get this one again later, without the answer.\n", GREEN, RESET);
                 return NEXT;
@@ -1964,8 +2008,9 @@ static int run_lesson(int i, int review) {
             return NEXT;
         }
         printf("%sNot quite.%s\n", RED, RESET);
+        log_attempt(i, input, 0);
         explain_failure(l, input);
-        if (review && ++tries >= (keep_files ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
+        if (review && !final_mode && ++tries >= (keep_files ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
             printf("One way:  %s\nBack into the lessons it goes.\n", l->answer);
             forget(i);
             return NEXT;
@@ -1997,18 +2042,25 @@ static int quiz_lesson(int i, int review) {
         if (handled == 2) continue;
         if (wants_answer(input)) {
             printf("%sAnswer: %s.%s %s\n", GREEN, l->check, RESET, l->answer);
+            if (final_mode) {
+                printf("Saved to your idk file. On to the next one.\n");
+                log_idk(i);
+                return NEXT;
+            }
             printf("This one comes around again later.\n");
             if (review) forget(i);
             return NEXT;
         }
         if (strlen(input) == 1 && tolower((unsigned char)input[0]) == l->check[0]) {
+            log_attempt(i, input, 1);
             printf("%s✓ Correct.%s %s\n", GREEN, RESET, l->answer);
             done[i] = 1;
             save_progress();
             return NEXT;
         }
         if (strlen(input) == 1 && input[0] >= 'a' && input[0] <= 'd') {
-            if (review && ++tries >= REVIEW_TRIES) {
+            log_attempt(i, input, 0);
+            if (review && !final_mode && ++tries >= REVIEW_TRIES) {
                 printf("%sNot quite.%s Answer: %s. %s\nBack into the lessons it goes.\n", RED, RESET, l->check, l->answer);
                 forget(i);
                 return NEXT;
@@ -2075,7 +2127,35 @@ static int final_review(void) {
     for (int k = 0; k < LESSON_COUNT; k++) pool[k] = k;
     printf("\n%s%sFinal review%s — all %d lessons, mixed up, no explanations. Anything you miss gets taught again.\n",
            BOLD, YELLOW, RESET, LESSON_COUNT);
-    return review_lessons(pool, LESSON_COUNT, LESSON_COUNT);
+    printf("There is no limit on tries here. Your answers are saved with the intended ones, and\n"
+           "anything you answer with idk goes to a separate file. Both end up in your home folder.\n");
+
+    const char *home = getenv("HOME");
+    const char *suffix = tier_progress[tier] + strlen("progress");
+    char dir[PATH_MAX], tmp_a[PATH_MAX], tmp_i[PATH_MAX], dst_a[PATH_MAX], dst_i[PATH_MAX];
+    snprintf(dir, sizeof dir, "%s/.shell-tutor", home ? home : ".");
+    mkdir(dir, 0700);
+    snprintf(tmp_a, sizeof tmp_a, "%s/final-answers%s.txt", dir, suffix);
+    snprintf(tmp_i, sizeof tmp_i, "%s/final-idk%s.txt", dir, suffix);
+    snprintf(dst_a, sizeof dst_a, "%s/shell-tutor-answers%s.txt", home ? home : ".", suffix);
+    snprintf(dst_i, sizeof dst_i, "%s/shell-tutor-idk%s.txt", home ? home : ".", suffix);
+    answers_f = fopen(tmp_a, "w");
+    idk_f = fopen(tmp_i, "w");
+    if (answers_f) fprintf(answers_f, "shell-tutor final review: your answers and the intended ones\n");
+    if (idk_f) fprintf(idk_f, "shell-tutor final review: intended answers for the ones you answered with idk\n");
+    logged_lesson = -1;
+    final_mode = 1;
+
+    int result = review_lessons(pool, LESSON_COUNT, LESSON_COUNT);
+
+    final_mode = 0;
+    if (answers_f) { fclose(answers_f); answers_f = NULL; }
+    if (idk_f) { fclose(idk_f); idk_f = NULL; }
+    if (rename(tmp_a, dst_a) == 0 && rename(tmp_i, dst_i) == 0)
+        printf("\nSaved %s and %s.\n", dst_a, dst_i);
+    else
+        printf("\nCould not move the answer files to your home folder; they are in %s.\n", dir);
+    return result;
 }
 
 /* ---------- main ---------- */
