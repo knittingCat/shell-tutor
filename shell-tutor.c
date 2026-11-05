@@ -1916,13 +1916,17 @@ static void log_reminder(int i) {
     fflush(remind_f);
 }
 
-/* One typed answer: right or wrong; the intended answer follows a right one. */
-static void log_attempt(int i, const char *input, int ok) {
+/* One typed answer: ATTEMPT_RIGHT, ATTEMPT_WRONG or ATTEMPT_TYPO (the shell could not parse it).
+   The intended answer follows a right one; a typo is recorded but is not a miss. */
+enum { ATTEMPT_WRONG = 0, ATTEMPT_RIGHT = 1, ATTEMPT_TYPO = 2 };
+
+static void log_attempt(int i, const char *input, int result) {
     if (!final_mode || !answers_f) return;
     if (logged_lesson != i) { log_header(answers_f, i); logged_lesson = i; }
-    fprintf(answers_f, "  you: %s   (%s)\n", input, ok ? "right" : "wrong");
-    if (ok) log_intended(answers_f, &LESSONS[i]);
-    else log_reminder(i);
+    fprintf(answers_f, "  you: %s   (%s)\n", input,
+            result == ATTEMPT_RIGHT ? "right" : result == ATTEMPT_TYPO ? "syntax error, not counted" : "wrong");
+    if (result == ATTEMPT_RIGHT) log_intended(answers_f, &LESSONS[i]);
+    else if (result == ATTEMPT_WRONG) log_reminder(i);
     fflush(answers_f);
 }
 
@@ -1945,8 +1949,23 @@ static void enter_lesson_dir(const Lesson *l) {
     }
 }
 
+/* The shell refused to parse the line (an unclosed quote, say): a typo, not a wrong answer. */
+static int output_has_syntax_error(void) {
+    int found = 0;
+    FILE *o = fopen(out_file, "r");
+    if (!o) return 0;
+    char line[512];
+    while (!found && fgets(line, sizeof line, o))
+        found = strstr(line, "unmatched") || strstr(line, "unterminated") ||
+                strstr(line, "parse error") || strstr(line, "syntax error");
+    fclose(o);
+    return found;
+}
+
 /* After a failed check: run the lesson's diagnosis, print what it says. */
 static void explain_failure(const Lesson *l, const char *input) {
+    if (output_has_syntax_error())
+        printf("%s  A quote was opened and never closed: every \" or ' needs a matching one at the end of the text.%s\n", YELLOW, RESET);
     if (!l->diagnose) return;
     run_shell(l->diagnose, lesson_dir, diag_file, input);
     FILE *f = fopen(diag_file, "r");
@@ -2017,7 +2036,7 @@ static int run_lesson(int i, int review) {
             return NEXT;
         }
         printf("%sNot quite.%s\n", RED, RESET);
-        log_attempt(i, input, 0);
+        log_attempt(i, input, output_has_syntax_error() ? ATTEMPT_TYPO : ATTEMPT_WRONG);
         explain_failure(l, input);
         if (review && !final_mode && ++tries >= (keep_files ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
             printf("One way:  %s\nBack into the lessons it goes.\n", l->answer);
