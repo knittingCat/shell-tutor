@@ -1763,9 +1763,12 @@ static void save_progress(void) {
     fclose(f);
 }
 
+static void clear_final_state(void);
+
 static void reset_progress(void) {
     memset(done, 0, sizeof done);
     unlink(progress_path);
+    clear_final_state();
 }
 
 /* ---------- lessons ---------- */
@@ -2109,15 +2112,63 @@ static int quiz_lesson(int i, int review) {
 /* Lessons asked in the previous quick review; kept out of the next one when the pool allows. */
 static int last_reviewed[REVIEW_SIZE], last_reviewed_n = 0;
 
-/* Re-asks the lessons in pool[0..n) in random order, `count` of them at most. */
-static int review_lessons(int *pool, int n, int count) {
-    for (int r = 0; r < count; r++) {
-        int pick = r + rand() % (n - r);     /* partial shuffle */
-        int tmp = pool[r]; pool[r] = pool[pick]; pool[pick] = tmp;
+/*
+ * The final review keeps its place: the shuffled order and how far you got are
+ * saved after every lesson, so quitting and coming back continues the same run.
+ */
+static void final_state_file(char *buf, size_t size) {
+    const char *home = getenv("HOME");
+    snprintf(buf, size, "%s/.shell-tutor/final-state%s", home ? home : ".", tier_progress[tier] + strlen("progress"));
+}
+
+static void save_final_state(const int *pool, int pos) {
+    char path[PATH_MAX];
+    final_state_file(path, sizeof path);
+    FILE *f = fopen(path, "w");
+    if (!f) return;
+    fprintf(f, "%d %d", LESSON_COUNT, pos);
+    for (int k = 0; k < LESSON_COUNT; k++) fprintf(f, " %d", pool[k]);
+    fprintf(f, "\n");
+    fclose(f);
+}
+
+static void clear_final_state(void) {
+    char path[PATH_MAX];
+    final_state_file(path, sizeof path);
+    unlink(path);
+}
+
+/* Reads a saved run back; 0 if there is none or it does not match the current lessons. */
+static int load_final_state(int *pool, int *pos) {
+    char path[PATH_MAX];
+    final_state_file(path, sizeof path);
+    FILE *f = fopen(path, "r");
+    if (!f) return 0;
+    int n = 0, p = 0, ok = fscanf(f, "%d %d", &n, &p) == 2 && n == LESSON_COUNT && p >= 0 && p < n;
+    int seen[LESSON_COUNT];
+    memset(seen, 0, sizeof seen);
+    for (int k = 0; ok && k < n; k++) {
+        ok = fscanf(f, "%d", &pool[k]) == 1 && pool[k] >= 0 && pool[k] < n && !seen[pool[k]];
+        if (ok) seen[pool[k]] = 1;
+    }
+    fclose(f);
+    if (ok) *pos = p;
+    return ok;
+}
+
+/* Re-asks the lessons in pool[0..n) in random order, `count` of them at most, starting at pool[start].
+   In the final review the pool is already shuffled and the place is saved after each lesson. */
+static int review_lessons(int *pool, int n, int count, int start) {
+    for (int r = start; r < count; r++) {
+        if (!final_mode) {
+            int pick = r + rand() % (n - r);     /* partial shuffle */
+            int tmp = pool[r]; pool[r] = pool[pick]; pool[pick] = tmp;
+        }
         int k = pool[r];
         int result = LESSONS[k].kind == RUN ? run_lesson(k, 1) : quiz_lesson(k, 1);
         if (result == QUIT) return QUIT;
         if (result == JUMP) return JUMP;
+        if (final_mode) save_final_state(pool, r + 1);
     }
     return NEXT;
 }
@@ -2149,7 +2200,7 @@ static int review_pass(int section_end) {
     if (f >= REVIEW_SIZE) { memcpy(pool, fresh, f * sizeof *pool); n = f; }
     int count = n < REVIEW_SIZE ? n : REVIEW_SIZE;
     printf("\n%s%sQuick review%s — %d from earlier sections, no explanations this time.\n", BOLD, YELLOW, RESET, count);
-    int result = review_lessons(pool, n, count);
+    int result = review_lessons(pool, n, count, 0);
     last_reviewed_n = count;
     memcpy(last_reviewed, pool, count * sizeof *pool);
     return result;
@@ -2176,10 +2227,20 @@ static int append_run(const char *from, const char *to) {
 
 /* Once everything is finished: every lesson once more, in random order. */
 static int final_review(void) {
-    int pool[LESSON_COUNT];
-    for (int k = 0; k < LESSON_COUNT; k++) pool[k] = k;
+    int pool[LESSON_COUNT], pos = 0;
+    int resumed = load_final_state(pool, &pos);
+    if (!resumed) {
+        for (int k = 0; k < LESSON_COUNT; k++) pool[k] = k;
+        for (int k = LESSON_COUNT - 1; k > 0; k--) {     /* shuffle once; the order is then saved */
+            int j = rand() % (k + 1);
+            int tmp = pool[k]; pool[k] = pool[j]; pool[j] = tmp;
+        }
+        save_final_state(pool, 0);
+    }
     printf("\n%s%sFinal review%s — all %d lessons, mixed up, no explanations.\n",
            BOLD, YELLOW, RESET, LESSON_COUNT);
+    if (resumed)
+        printf("Picking up where you left off: %d of %d already done.\n", pos, LESSON_COUNT);
     printf("There is no limit on tries here. Your answers are saved with the intended ones, and\n"
            "anything you get wrong or answer with idk goes to a cmd-reminders file. Both end up in your home folder.\n");
 
@@ -2199,7 +2260,8 @@ static int final_review(void) {
     logged_lesson = reminded_lesson = -1;
     final_mode = 1;
 
-    int result = review_lessons(pool, LESSON_COUNT, LESSON_COUNT);
+    int result = review_lessons(pool, LESSON_COUNT, LESSON_COUNT, pos);
+    if (result == NEXT) clear_final_state();
 
     final_mode = 0;
     if (answers_f) { fclose(answers_f); answers_f = NULL; }
