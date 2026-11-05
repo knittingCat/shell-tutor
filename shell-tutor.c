@@ -2134,7 +2134,7 @@ static int review_pass(int section_end) {
 static int final_review(void) {
     int pool[LESSON_COUNT];
     for (int k = 0; k < LESSON_COUNT; k++) pool[k] = k;
-    printf("\n%s%sFinal review%s — all %d lessons, mixed up, no explanations. Anything you miss gets taught again.\n",
+    printf("\n%s%sFinal review%s — all %d lessons, mixed up, no explanations.\n",
            BOLD, YELLOW, RESET, LESSON_COUNT);
     printf("There is no limit on tries here. Your answers are saved with the intended ones, and\n"
            "anything you get wrong or answer with idk goes to a cmd-reminders file. Both end up in your home folder.\n");
