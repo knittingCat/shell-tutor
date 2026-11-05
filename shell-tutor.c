@@ -1949,21 +1949,27 @@ static void enter_lesson_dir(const Lesson *l) {
     }
 }
 
-/* The shell refused to parse the line (an unclosed quote, say): a typo, not a wrong answer. */
-static int output_has_syntax_error(void) {
+static int output_mentions(const char *text) {
     int found = 0;
     FILE *o = fopen(out_file, "r");
     if (!o) return 0;
     char line[512];
     while (!found && fgets(line, sizeof line, o))
-        found = strstr(line, "unmatched") || strstr(line, "unterminated") ||
-                strstr(line, "parse error") || strstr(line, "syntax error");
+        found = strstr(line, text) != NULL;
     fclose(o);
     return found;
 }
 
+/* The shell refused to parse the line (an unclosed quote, say): a typo, not a wrong answer. */
+static int output_has_syntax_error(void) {
+    return output_mentions("unmatched") || output_mentions("unterminated") ||
+           output_mentions("parse error") || output_mentions("syntax error");
+}
+
 /* After a failed check: run the lesson's diagnosis, print what it says. */
 static void explain_failure(const Lesson *l, const char *input) {
+    if (strstr(input, "find ") && output_mentions("find: illegal option"))
+        printf("%s  On a Mac, find needs a folder before the options: find . -name '*.txt' (the . means here).%s\n", YELLOW, RESET);
     if (output_has_syntax_error())
         printf("%s  A quote was opened and never closed: every \" or ' needs a matching one at the end of the text.%s\n", YELLOW, RESET);
     if (!l->diagnose) return;
