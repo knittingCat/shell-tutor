@@ -2155,6 +2155,25 @@ static int review_pass(int section_end) {
     return result;
 }
 
+/* Adds one run's file to the end of the file in the home folder, under a dated line, then removes it. */
+static int append_run(const char *from, const char *to) {
+    FILE *in = fopen(from, "r");
+    if (!in) return 0;
+    FILE *out = fopen(to, "a");
+    if (!out) { fclose(in); return 0; }
+    time_t now = time(NULL);
+    char stamp[64];
+    strftime(stamp, sizeof stamp, "%Y-%m-%d %H:%M", localtime(&now));
+    fprintf(out, "\n===== run of %s =====\n", stamp);
+    char buf[4096];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof buf, in)) > 0) fwrite(buf, 1, n, out);
+    int ok = fclose(out) == 0;
+    fclose(in);
+    if (ok) unlink(from);
+    return ok;
+}
+
 /* Once everything is finished: every lesson once more, in random order. */
 static int final_review(void) {
     int pool[LESSON_COUNT];
@@ -2185,10 +2204,14 @@ static int final_review(void) {
     final_mode = 0;
     if (answers_f) { fclose(answers_f); answers_f = NULL; }
     if (remind_f) { fclose(remind_f); remind_f = NULL; }
-    if (rename(tmp_a, dst_a) == 0 && rename(tmp_i, dst_i) == 0)
-        printf("\nSaved %s and %s.\n", dst_a, dst_i);
+    int kept_a = logged_lesson < 0 || append_run(tmp_a, dst_a);
+    int kept_i = reminded_lesson < 0 || append_run(tmp_i, dst_i);
+    if (logged_lesson < 0 && reminded_lesson < 0)
+        ;   /* nothing was answered: nothing to save */
+    else if (kept_a && kept_i)
+        printf("\nSaved to %s and %s (earlier runs are kept in them).\n", dst_a, dst_i);
     else
-        printf("\nCould not move the answer files to your home folder; they are in %s.\n", dir);
+        printf("\nCould not add to the answer files in your home folder; this run is in %s.\n", dir);
     return result;
 }
 
