@@ -1973,7 +1973,11 @@ static int output_has_syntax_error(void) {
 static void explain_failure(const Lesson *l, const char *input) {
     if (strstr(input, "find ") && output_mentions("find: illegal option"))
         printf("%s  On a Mac, find needs a folder before the options: find . -name '*.txt' (the . means here).%s\n", YELLOW, RESET);
-    if (output_has_syntax_error())
+    if (output_mentions("parse error")) {
+        printf("%s  The shell could not make sense of that line: a word or ; is missing or in the wrong place.%s\n", YELLOW, RESET);
+        if (strncmp(input, "for ", 4) == 0)
+            printf("%s  A loop has this shape: for NAME in LIST; do COMMAND; done%s\n", YELLOW, RESET);
+    } else if (output_has_syntax_error())
         printf("%s  A quote was opened and never closed: every \" or ' needs a matching one at the end of the text.%s\n", YELLOW, RESET);
     if (!l->diagnose) return;
     run_shell(l->diagnose, lesson_dir, diag_file, input);
