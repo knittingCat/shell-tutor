@@ -1891,54 +1891,49 @@ static void forget(int i) {
 }
 
 /*
- * During the final review there is no limit on tries, and everything typed is
- * recorded: answers_f gets each attempt with the intended answer beside it,
- * remind_f gets the intended answer of every lesson answered with idk or
- * answered wrong at least once (once per lesson). Both are moved to the home
- * directory when the review ends.
+ * During the final review there is no limit on tries. Every lesson you miss
+ * (a wrong answer, or idk) is added to one file in your home folder, in this
+ * form, once per lesson however many times you miss it:
+ *
+ *   [N/43] Section - Title
+ *     intended: the answer
+ *
+ * What you typed is not recorded, and the file is only ever added to.
  */
 static int final_mode = 0;
-static FILE *answers_f = NULL, *remind_f = NULL;
-static int logged_lesson = -1, reminded_lesson = -1;
+static char reminders_path[PATH_MAX];
 
-static void log_header(FILE *f, int i) {
-    fprintf(f, "\n[%d/%d] %s - %s\n", i + 1, LESSON_COUNT, LESSONS[i].section, LESSONS[i].title);
-}
-
-static void log_intended(FILE *f, const Lesson *l) {
+static void log_reminder(int i) {
+    if (!final_mode || !reminders_path[0]) return;
+    const Lesson *l = &LESSONS[i];
+    char header[256];
+    snprintf(header, sizeof header, "[%d/%d] %s - %s\n", i + 1, LESSON_COUNT, l->section, l->title);
+    FILE *f = fopen(reminders_path, "r");
+    if (f) {
+        char line[512];
+        while (fgets(line, sizeof line, f))
+            if (strcmp(line, header) == 0) { fclose(f); return; }   /* already listed */
+        fclose(f);
+    }
+    f = fopen(reminders_path, "a");
+    if (!f) return;
+    fprintf(f, "\n%s", header);
     if (l->kind == QUIZ) fprintf(f, "  intended: %s) %s\n", l->check, l->answer);
     else fprintf(f, "  intended: %s\n", l->answer);
-}
-
-/* Puts a lesson's intended answer in the cmd-reminders file, once however many misses. */
-static void log_reminder(int i) {
-    if (!remind_f || reminded_lesson == i) return;
-    reminded_lesson = i;
-    log_header(remind_f, i);
-    log_intended(remind_f, &LESSONS[i]);
-    fflush(remind_f);
+    fclose(f);
 }
 
 /* One typed answer: ATTEMPT_RIGHT, ATTEMPT_WRONG or ATTEMPT_TYPO (the shell could not parse it).
-   The intended answer follows a right one; a typo is recorded but is not a miss. */
+   Only a wrong one counts as a miss; a typo is not one. */
 enum { ATTEMPT_WRONG = 0, ATTEMPT_RIGHT = 1, ATTEMPT_TYPO = 2 };
 
 static void log_attempt(int i, const char *input, int result) {
-    if (!final_mode || !answers_f) return;
-    if (logged_lesson != i) { log_header(answers_f, i); logged_lesson = i; }
-    fprintf(answers_f, "  you: %s   (%s)\n", input,
-            result == ATTEMPT_RIGHT ? "right" : result == ATTEMPT_TYPO ? "syntax error, not counted" : "wrong");
-    if (result == ATTEMPT_RIGHT) log_intended(answers_f, &LESSONS[i]);
-    else if (result == ATTEMPT_WRONG) log_reminder(i);
-    fflush(answers_f);
+    (void)input;
+    if (result == ATTEMPT_WRONG) log_reminder(i);
 }
 
 static void log_idk(int i) {
-    if (!final_mode || !answers_f) return;
-    if (logged_lesson != i) { log_header(answers_f, i); logged_lesson = i; }
-    fprintf(answers_f, "  you: idk   (the answer is in the cmd-reminders file)\n");
     log_reminder(i);
-    fflush(answers_f);
 }
 
 
@@ -2210,25 +2205,6 @@ static int review_pass(int section_end) {
     return result;
 }
 
-/* Adds one run's file to the end of the file in the home folder, under a dated line, then removes it. */
-static int append_run(const char *from, const char *to) {
-    FILE *in = fopen(from, "r");
-    if (!in) return 0;
-    FILE *out = fopen(to, "a");
-    if (!out) { fclose(in); return 0; }
-    time_t now = time(NULL);
-    char stamp[64];
-    strftime(stamp, sizeof stamp, "%Y-%m-%d %H:%M", localtime(&now));
-    fprintf(out, "\n===== run of %s =====\n", stamp);
-    char buf[4096];
-    size_t n;
-    while ((n = fread(buf, 1, sizeof buf, in)) > 0) fwrite(buf, 1, n, out);
-    int ok = fclose(out) == 0;
-    fclose(in);
-    if (ok) unlink(from);
-    return ok;
-}
-
 /* Once everything is finished: every lesson once more, in random order. */
 static int final_review(void) {
     int pool[LESSON_COUNT], pos = 0;
@@ -2245,39 +2221,18 @@ static int final_review(void) {
            BOLD, YELLOW, RESET, LESSON_COUNT);
     if (resumed)
         printf("Picking up where you left off: %d of %d already done.\n", pos, LESSON_COUNT);
-    printf("There is no limit on tries here. Your answers are saved with the intended ones, and\n"
-           "anything you get wrong or answer with idk goes to a cmd-reminders file. Both end up in your home folder.\n");
+    printf("There is no limit on tries here. Anything you get wrong or answer with idk is added,\n"
+           "with the intended answer, to a cmd-reminders file in your home folder.\n");
 
     const char *home = getenv("HOME");
     const char *suffix = tier_progress[tier] + strlen("progress");
-    char dir[PATH_MAX], tmp_a[PATH_MAX], tmp_i[PATH_MAX], dst_a[PATH_MAX], dst_i[PATH_MAX];
-    snprintf(dir, sizeof dir, "%s/.shell-tutor", home ? home : ".");
-    mkdir(dir, 0700);
-    snprintf(tmp_a, sizeof tmp_a, "%s/final-answers%s.txt", dir, suffix);
-    snprintf(tmp_i, sizeof tmp_i, "%s/final-cmd-reminders%s.txt", dir, suffix);
-    snprintf(dst_a, sizeof dst_a, "%s/shell-tutor-answers%s.txt", home ? home : ".", suffix);
-    snprintf(dst_i, sizeof dst_i, "%s/shell-tutor-cmd-reminders%s.txt", home ? home : ".", suffix);
-    answers_f = fopen(tmp_a, "w");
-    remind_f = fopen(tmp_i, "w");
-    if (answers_f) fprintf(answers_f, "shell-tutor final review: your answers and the intended ones\n");
-    if (remind_f) fprintf(remind_f, "shell-tutor final review: intended answers for the ones you got wrong or answered with idk\n");
-    logged_lesson = reminded_lesson = -1;
+    snprintf(reminders_path, sizeof reminders_path, "%s/shell-tutor-cmd-reminders%s.txt", home ? home : ".", suffix);
     final_mode = 1;
 
     int result = review_lessons(pool, LESSON_COUNT, LESSON_COUNT, pos);
     if (result == NEXT) clear_final_state();
 
     final_mode = 0;
-    if (answers_f) { fclose(answers_f); answers_f = NULL; }
-    if (remind_f) { fclose(remind_f); remind_f = NULL; }
-    int kept_a = logged_lesson < 0 || append_run(tmp_a, dst_a);
-    int kept_i = reminded_lesson < 0 || append_run(tmp_i, dst_i);
-    if (logged_lesson < 0 && reminded_lesson < 0)
-        ;   /* nothing was answered: nothing to save */
-    else if (kept_a && kept_i)
-        printf("\nSaved to %s and %s (earlier runs are kept in them).\n", dst_a, dst_i);
-    else
-        printf("\nCould not add to the answer files in your home folder; this run is in %s.\n", dir);
     return result;
 }
 
