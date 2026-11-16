@@ -285,9 +285,9 @@ static const Lesson BASIC[] = {
       "> throws away whatever the file held before. To keep it and add more at the\n"
       "end, use two of them: >> appends. Each command adds its output as new lines\n"
       "after the existing ones:\n"
-      "  echo first > note.txt    note.txt now holds one line: first\n"
-      "  echo second >> note.txt  note.txt now holds two lines: first, second\n"
-      "  echo third > note.txt    back to one line: third (the > replaced it all)\n"
+      "  echo first > note.txt - note.txt now holds one line: first\n"
+      "  echo second >> note.txt - note.txt now holds two lines: first, second\n"
+      "  echo third > note.txt - back to one line: third (the > replaced it all)\n"
       "fruits.txt here holds three lines: apple, banana, cherry.",
       "Add a fourth line, the word mango, to the end of fruits.txt, keeping the three lines already there.",
       "[ \"$(tail -n 1 fruits.txt)\" = \"mango\" ] && grep -q '^apple$' fruits.txt && [ \"$(wc -l < fruits.txt | tr -d ' ')\" = 4 ]",
@@ -533,7 +533,7 @@ static const Lesson BASIC[] = {
       "shell rewrites {a,b,c} into one word per item, keeping the text around it:\n"
       "  echo file{1,2}.txt becomes echo file1.txt file2.txt\n"
       "so you can combine it with any command:\n"
-      "  touch file{1,2}.txt  creates file1.txt and file2.txt.",
+      "  touch file{1,2}.txt - creates file1.txt and file2.txt.",
       "Create three empty files at once: draft1.txt, draft2.txt and draft3.txt.",
       "[ -f draft1.txt ] && [ -f draft2.txt ] && [ -f draft3.txt ] && [[ \"$CMD\" == *'{'* ]]",
       "touch draft{1,2,3}.txt",
@@ -599,7 +599,7 @@ static const Lesson BASIC[] = {
       "biggest first.\n"
       "head -n 1 keeps only the first line of what it receives, so putting it\n"
       "after a sort with | gives you the first one in the order you chose:\n"
-      "  sort -n scores.txt | head -n 1    prints the smallest number\n"
+      "  sort -n scores.txt | head -n 1 - prints the smallest number\n"
       "(tail -n 1 would instead keep the last line.)",
       "Print the single largest number in scores.txt.",
       "[ \"$(cat \"$OUT\")\" = \"97\" ]",
@@ -624,7 +624,7 @@ static const Lesson BASIC[] = {
       "  for f in *.txt take the list of names that *.txt matches, and call the\n"
       "                   current one f (f is just a name for the variable; any\n"
       "                   word works)\n"
-      "  do ... done      the commands to repeat; here, once per name\n"
+      "  do ... done - the commands to repeat; here, once per name\n"
       "$f stands for whatever f is right now: a.txt the first time round, b.txt\n"
       "the second. Several commands can go between do and done, separated by ;.\n"
       "The list after in can also come from a command: $(find docs -name '*.md')\n"
@@ -783,7 +783,7 @@ static const Lesson ADVANCED[] = {
       "way to write a short script: printf '#!/bin/sh\\necho ...\\n' > FILE.",
       "Write hello.sh so that it prints Hello, NAME! where NAME is its first argument. Run it with the argument World.",
       "grep -qx 'Hello, World!' \"$OUT\" && grep -q '\\$1' hello.sh",
-      "In the script: echo \"Hello, $1!\"  Then run it with World after its name.",
+      "In the script: echo \"Hello, $1!\" Then run it with World after its name.",
       "printf '#!/bin/sh\\necho \"Hello, $1!\"\\n' > hello.sh; sh hello.sh World", NULL,
       "grep -q 'Hello from a script' \"$OUT\" && echo 'That is the old hello.sh from the fixtures; overwrite it with your own.'; [ -e hello.sh ] && ! grep -q '\\$1' hello.sh && echo 'The script never looks at $1, so the name cannot get in.'; grep -q '^Hello, !$' \"$OUT\" && echo 'Hello, ! means $1 was empty: put World after the script name when you run it.'" },
 
@@ -797,7 +797,7 @@ static const Lesson ADVANCED[] = {
       "answer through a pipe: echo 42 | ./ask.sh feeds 42 to the read.",
       "Write ask.sh that asks for a name, reads it and prints: Nice to meet you, NAME. Run it with the name Ada supplied through a pipe.",
       "grep -q 'Nice to meet you, Ada\\.' \"$OUT\" && grep -q 'read' ask.sh",
-      "In the script: read name, then echo \"Nice to meet you, $name.\"  Run: echo Ada | sh ask.sh",
+      "In the script: read name, then echo \"Nice to meet you, $name.\" Run: echo Ada | sh ask.sh",
       "cat > ask.sh <<'EOF'\n#!/bin/sh\nprintf 'What is your name? '\nread name\necho \"Nice to meet you, $name.\"\nEOF\necho Ada | sh ask.sh", NULL,
       "[ -e ask.sh ] || echo 'No ask.sh yet.'; [ -e ask.sh ] && grep -q read ask.sh && [ ! -s \"$OUT\" ] && echo 'ask.sh is written. Now run it with the name piped in: echo Ada | sh ask.sh'; [ -e ask.sh ] && ! grep -q read ask.sh && echo 'The script needs a read command to take the answer in.'; grep -q 'Nice to meet you, \\.' \"$OUT\" && echo 'The name came out empty: nothing was piped in. Run it as echo Ada | sh ask.sh'" },
 
@@ -943,7 +943,7 @@ static const Lesson ADVANCED[] = {
       "shell's startup file, which it reads every time a new interactive shell\n"
       "starts:\n"
       "  ~/.zshrc for zsh, the default shell on a Mac\n"
-      "  ~/.bashrc  for bash (on a Mac, bash reads ~/.bash_profile at login,\n"
+      "  ~/.bashrc - for bash (on a Mac, bash reads ~/.bash_profile at login,\n"
       "             which usually just sources ~/.bashrc)\n"
       "echo $SHELL tells you which one you have. A shell that is already open\n"
       "does not notice a change to the file; run source on it (source ~/.zshrc)\n"
@@ -971,9 +971,9 @@ static const Lesson ADVANCED[] = {
     { "ls-l-perms", QUIZ, "Permissions", "Reading the permission letters",
       "The first column of ls -l, such as -rwxr-x---, is ten characters: the\n"
       "file type (- file, d directory, l link) and then three groups of three:\n"
-      "  rwx  for the owner (you, for your files)\n"
-      "  r-x  for the file's group\n"
-      "  ---  for everyone else\n"
+      "  rwx - for the owner (you, for your files)\n"
+      "  r-x - for the file's group\n"
+      "  --- - for everyone else\n"
       "r read, w write (change or delete), x execute (run it; for a directory,\n"
       "enter it). A - means that right is missing.",
       "A file shows -rwxr-x---. Who can run it?",
@@ -1055,8 +1055,8 @@ static const Lesson ADVANCED[] = {
       "To edit the file in place instead of printing, add -i. On a Mac the\n"
       "option needs an argument, the suffix for a backup copy, and '' means no\n"
       "backup:\n"
-      "  sed -i '' 's/OLD/NEW/' FILE     (macOS)\n"
-      "  sed -i 's/OLD/NEW/' FILE        (Linux)\n"
+      "  sed -i '' 's/OLD/NEW/' FILE - (macOS)\n"
+      "  sed -i 's/OLD/NEW/' FILE - (Linux)\n"
       "Test the substitution without -i first; there is no undo.",
       "Change NUMBER to 42 inside letter.txt itself.",
       "grep -q 'order 42 has' letter.txt",
@@ -1066,10 +1066,10 @@ static const Lesson ADVANCED[] = {
 
     { "sed-lines", RUN, "Patterns", "sed: pick or drop lines",
       "sed can also select lines. -n stops the automatic printing; p prints:\n"
-      "  sed -n '2p' FILE      only line 2\n"
-      "  sed -n '3,5p' FILE    lines 3 to 5\n"
-      "  sed '1d' FILE         everything except line 1 (d deletes)\n"
-      "  sed '/draft/d' FILE   drop the lines matching a pattern",
+      "  sed -n '2p' FILE - only line 2\n"
+      "  sed -n '3,5p' FILE - lines 3 to 5\n"
+      "  sed '1d' FILE - everything except line 1 (d deletes)\n"
+      "  sed '/draft/d' FILE - drop the lines matching a pattern",
       "Using sed, print only lines 3 to 5 of numbers.txt.",
       "[ \"$(cat \"$OUT\")\" = \"$(printf '3\\n4\\n5')\" ] && [[ \"$CMD\" == *sed* ]]",
       "-n with a range and p.",
@@ -1079,8 +1079,8 @@ static const Lesson ADVANCED[] = {
     { "awk", RUN, "Patterns", "awk: columns and sums",
       "awk reads each line, splits it into fields ($1, $2, ... and $NF for the\n"
       "last), and runs a small program on it:\n"
-      "  awk '{ print $2 }' FILE           second column of every line\n"
-      "  awk -F, '{ print $1 }' FILE       fields separated by commas\n"
+      "  awk '{ print $2 }' FILE - second column of every line\n"
+      "  awk -F, '{ print $1 }' FILE - fields separated by commas\n"
       "  awk '{ total += $1 } END { print total }' FILE\n"
       "The END block runs once after the last line: the place to print a total.\n"
       "scores.txt has one number per line.",
@@ -1142,10 +1142,10 @@ static const Lesson ADVANCED[] = {
       "[[ \"$CMD\" == *diff* ]] || echo 'The command is diff.'" },
 
     { "du", RUN, "Handy tools", "Disk space",
-      "  du -sh FOLDER  the size of a directory and everything in it (s: one\n"
+      "  du -sh FOLDER - the size of a directory and everything in it (s: one\n"
       "                 summary line, h: human units like 4.0K, 12M, 1.5G)\n"
-      "  du -sh *       one line per item in the current directory\n"
-      "  df -h          how full each disk is",
+      "  du -sh * - one line per item in the current directory\n"
+      "  df -h - how full each disk is",
       "Show how much space the docs directory takes, as a single human-readable line.",
       "[[ \"$CMD\" == *du* ]] && [ \"$(wc -l < \"$OUT\")\" -eq 1 ] && grep -q docs \"$OUT\"",
       "du with -s and -h, then the directory.",
@@ -1155,8 +1155,8 @@ static const Lesson ADVANCED[] = {
     { "date", RUN, "Handy tools", "Dates in the shape you want",
       "date prints the current date and time. Give it a format, after a +, to\n"
       "choose the shape: %Y year, %m month, %d day, %H hours, %M minutes.\n"
-      "  date +%Y-%m-%d       2026-09-20\n"
-      "  date +%H:%M          14:05\n"
+      "  date +%Y-%m-%d - 2026-09-20\n"
+      "  date +%H:%M - 14:05\n"
       "%F is short for %Y-%m-%d. Handy in file names: backup-$(date +%F).tar",
       "Print today's date as year-month-day, with the numbers separated by dashes.",
       "grep -qx \"$(date +%F)\" \"$OUT\"",
@@ -1456,7 +1456,7 @@ static const Lesson GITHUB[] = {
       "     GitHub no longer accepts your account password there, only a\n"
       "     personal access token (a long generated string) or a helper that\n"
       "     stores one.\n"
-      "  git@github.com:USER/REPO.git       uses an SSH key: made once with\n"
+      "  git@github.com:USER/REPO.git - uses an SSH key: made once with\n"
       "     ssh-keygen, its public half added under Settings, SSH keys on\n"
       "     GitHub; then pushes just work. git remote set-url origin URL\n"
       "     switches an existing repository from one to the other.",
@@ -1486,7 +1486,7 @@ static const Lesson GITHUB[] = {
       "login once:\n"
       "  gh repo create NAME --public --source=. --push makes the GitHub\n"
       "     repository for the directory you are in, connects and pushes it\n"
-      "  gh pr create      opens a pull request for the current branch\n"
+      "  gh pr create - opens a pull request for the current branch\n"
       "  gh pr list, gh pr checkout N, gh issue list ...\n"
       "Everything gh does can be done on the website; gh saves the trip.",
       "Your branch is pushed and you want a pull request without opening the browser. Which command?",
@@ -2245,10 +2245,10 @@ static int final_review(void) {
 static void usage(void) {
     puts("shell-tutor - learn the Unix shell by doing\n"
          "\n"
-         "  shell-tutor          continue from the first unfinished lesson\n"
-         "  shell-tutor N        start at lesson N\n"
-         "  shell-tutor --list   show the lessons and your progress\n"
-         "  shell-tutor --reset  forget your progress\n"
+         "  shell-tutor - continue from the first unfinished lesson\n"
+         "  shell-tutor N - start at lesson N\n"
+         "  shell-tutor --list - show the lessons and your progress\n"
+         "  shell-tutor --reset - forget your progress\n"
          "  shell-tutor --advanced [N | --list | --reset]\n"
          "                       the second tier: scripts, regex, sed, awk, PATH, permissions...\n"
          "  shell-tutor --github [N | --list | --reset]\n"
