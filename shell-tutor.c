@@ -1898,7 +1898,7 @@ static void forget(int i) {
  *     intended: the answer
  *
  * The answers file gets every lesson you finish (right, or idk); the
- * cmd-reminders file gets the ones you missed (a wrong answer, or idk).
+ * cmd-reminders file gets only the ones you answered with idk.
  * What you typed is not recorded, and the files are only ever added to.
  */
 static int final_mode = 0;
@@ -1925,13 +1925,12 @@ static void log_entry(const char *path, int i) {
 }
 
 /* One typed answer: ATTEMPT_RIGHT, ATTEMPT_WRONG or ATTEMPT_TYPO (the shell could not parse it).
-   A right one finishes the lesson; only a wrong one counts as a miss, a typo is not one. */
+   A right one finishes the lesson; wrong answers and typos are not recorded (only idk is). */
 enum { ATTEMPT_WRONG = 0, ATTEMPT_RIGHT = 1, ATTEMPT_TYPO = 2 };
 
 static void log_attempt(int i, const char *input, int result) {
     (void)input;
     if (result == ATTEMPT_RIGHT) log_entry(answers_path, i);
-    else if (result == ATTEMPT_WRONG) log_entry(reminders_path, i);
 }
 
 static void log_idk(int i) {
@@ -2225,8 +2224,8 @@ static int final_review(void) {
     if (resumed)
         printf("Picking up where you left off: %d of %d already done.\n", pos, LESSON_COUNT);
     printf("There is no limit on tries here. Each lesson you finish is added, with the intended answer,\n"
-           "to an answers file in your home folder, and anything you get wrong or answer with idk\n"
-           "is also added to a cmd-reminders file.\n");
+           "to an answers file in your home folder, and anything you answer with idk is also\n"
+           "added to a cmd-reminders file.\n");
 
     const char *home = getenv("HOME");
     const char *suffix = tier_progress[tier] + strlen("progress");
