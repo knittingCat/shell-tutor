@@ -531,7 +531,7 @@ static const Lesson BASIC[] = {
       "\n"
       "Braces save typing a list of similar names. Before the command runs, the\n"
       "shell rewrites {a,b,c} into one word per item, keeping the text around it:\n"
-      "  echo file{1,2}.txt   becomes   echo file1.txt file2.txt\n"
+      "  echo file{1,2}.txt becomes echo file1.txt file2.txt\n"
       "so you can combine it with any command:\n"
       "  touch file{1,2}.txt  creates file1.txt and file2.txt.",
       "Create three empty files at once: draft1.txt, draft2.txt and draft3.txt.",
@@ -621,7 +621,7 @@ static const Lesson BASIC[] = {
       "holds a.txt and b.txt. Then:\n"
       "  for f in *.txt; do echo \"$f\"; done\n"
       "prints a.txt and then b.txt. Read it from left to right:\n"
-      "  for f in *.txt   take the list of names that *.txt matches, and call the\n"
+      "  for f in *.txt take the list of names that *.txt matches, and call the\n"
       "                   current one f (f is just a name for the variable; any\n"
       "                   word works)\n"
       "  do ... done      the commands to repeat; here, once per name\n"
@@ -942,7 +942,7 @@ static const Lesson ADVANCED[] = {
       "made them. To have them in every terminal, put the same lines into your\n"
       "shell's startup file, which it reads every time a new interactive shell\n"
       "starts:\n"
-      "  ~/.zshrc   for zsh, the default shell on a Mac\n"
+      "  ~/.zshrc for zsh, the default shell on a Mac\n"
       "  ~/.bashrc  for bash (on a Mac, bash reads ~/.bash_profile at login,\n"
       "             which usually just sources ~/.bashrc)\n"
       "echo $SHELL tells you which one you have. A shell that is already open\n"
@@ -1452,7 +1452,7 @@ static const Lesson GITHUB[] = {
 
     { "ssh-https", QUIZ, "GitHub and remotes", "HTTPS or SSH",
       "A GitHub URL comes in two forms:\n"
-      "  https://github.com/USER/REPO.git   asks who you are on each push;\n"
+      "  https://github.com/USER/REPO.git asks who you are on each push;\n"
       "     GitHub no longer accepts your account password there, only a\n"
       "     personal access token (a long generated string) or a helper that\n"
       "     stores one.\n"
@@ -1484,7 +1484,7 @@ static const Lesson GITHUB[] = {
     { "gh-cli", QUIZ, "GitHub and remotes", "GitHub from the terminal: gh",
       "gh is GitHub's own command-line tool (brew install gh). After gh auth\n"
       "login once:\n"
-      "  gh repo create NAME --public --source=. --push   makes the GitHub\n"
+      "  gh repo create NAME --public --source=. --push makes the GitHub\n"
       "     repository for the directory you are in, connects and pushes it\n"
       "  gh pr create      opens a pull request for the current branch\n"
       "  gh pr list, gh pr checkout N, gh issue list ...\n"
@@ -2327,7 +2327,7 @@ int main(int argc, char **argv) {
                "press Enter, and it runs it and shows the result. A command is a program's name,\n"
                "sometimes followed by options (like -l) and the files it should work on.\n"
                "Each lesson explains one thing, then asks you to try it. If you have no idea,\n"
-               "type   idk   to see an answer, then type that yourself to see what it does.\n"
+               "type idk to see an answer, then type that yourself to see what it does.\n"
                "Nothing you try here can damage anything.\n"
                "The commands here run in zsh, the shell a Mac opens by default. Everything\n"
                "taught applies to bash as well; the few places where they differ say so.\n");
@@ -2361,9 +2361,9 @@ int main(int argc, char **argv) {
         }
         if (pending == 0) {
             printf("\n%sThat's all %d lessons, reviewed and all. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
-            printf("Run   shell-tutor%s   again any time for another full review, or   shell-tutor%s --reset   to start from scratch.\n", tier_flag[tier], tier_flag[tier]);
-            if (tier == TIER_BASIC) printf("Ready for more? There is a second tier:   shell-tutor --advanced\n");
-            if (tier == TIER_ADVANCED) printf("Ready for more? The third tier is git and GitHub:   shell-tutor --github\n");
+            printf("Run shell-tutor%s again any time for another full review, or shell-tutor%s --reset to start from scratch.\n", tier_flag[tier], tier_flag[tier]);
+            if (tier == TIER_BASIC) printf("Ready for more? There is a second tier: shell-tutor --advanced\n");
+            if (tier == TIER_ADVANCED) printf("Ready for more? The third tier is git and GitHub: shell-tutor --github\n");
             break;
         }
         printf("\n%sGoing back to the %d lesson%s you skipped or needed the answer for.%s\n", YELLOW, pending, pending == 1 ? "" : "s", RESET);
