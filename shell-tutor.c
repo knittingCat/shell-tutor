@@ -700,26 +700,22 @@ static const Lesson BASIC[] = {
 static const Lesson ADVANCED[] = {
     /* ----- Writing files ----- */
 
-    { "printf", RUN, "Writing files", "printf: text with a shape",
-      "echo prints its words and adds a newline. printf is the precise version:\n"
-      "it takes a FORMAT first, then the values to put into it.\n"
-      "  printf 'FORMAT' VALUE VALUE...\n"
-      "In the format, %s stands for the next value (any text), %d for the next\n"
-      "value as a whole number, \\n is a line break, \\t a tab. printf adds no\n"
-      "newline by itself; you write the \\n. For example\n"
-      "  printf '%s has %d legs\\n' cat 4 prints: cat has 4 legs\n"
-      "Given more values than the format uses, printf runs the format again for\n"
-      "the next ones: printf '%s\\n' a b c prints three lines.",
-      "With one printf, print two lines: ada, a tab, 1815; then alan, a tab, 1912.",
-      "[ \"$(cat \"$OUT\")\" = \"$(printf 'ada\\t1815\\nalan\\t1912')\" ] && [[ \"$CMD\" == *printf* ]]",
-      "One format with %s, \\t, %d and \\n, followed by four values.",
-      "printf '%s\\t%d\\n' ada 1815 alan 1912", NULL,
-      "[[ \"$CMD\" == *printf* ]] || echo 'Use printf: its format is what makes the tab and the two lines.'; grep -q '\\\\t' \"$OUT\" && echo 'A literal \\\\t was printed: in printf the escapes go in the FORMAT, and the format goes in single quotes.'; [ \"$(wc -l < \"$OUT\")\" -lt 2 ] && echo 'Only one line came out: the format needs a \\\\n at the end so each pair ends a line.'" },
+    { "printf", RUN, "Writing files", "printf: several lines at once",
+      "printf is like echo, but you decide where the line breaks go. Write \\n\n"
+      "wherever you want a new line, and put the text in single quotes:\n"
+      "  printf 'one\\ntwo\\n' prints: one, then two on its own line.\n"
+      "Unlike echo, printf adds no line break at the end by itself, so finish with\n"
+      "a \\n.",
+      "With one printf, print two lines: hello, then bye.",
+      "[ \"$(cat \"$OUT\")\" = \"$(printf 'hello\\nbye')\" ] && [[ \"$CMD\" == *printf* ]]",
+      "printf 'hello', then \\n, then bye, then \\n, all inside single quotes.",
+      "printf 'hello\\nbye\\n'", NULL,
+      "[[ \"$CMD\" == *printf* ]] || echo 'Use printf: its \\\\n is what makes the line break.'; grep -q '\\\\n' \"$OUT\" && echo 'A literal \\\\n was printed: put the text in single quotes after printf.'; [ \"$(wc -l < \"$OUT\")\" -lt 2 ] && echo 'Only one line came out: write \\\\n between hello and bye, and at the end.'" },
 
     { "printf-file", RUN, "Writing files", "A small file in one line",
-      "Since printf writes exactly what the format says, line breaks included, it is\n"
-      "the quickest way to create a short file with several lines: printf the lines\n"
-      "and redirect (>) into the file.\n"
+      "Since printf prints exactly the line breaks you write, it is the quickest way\n"
+      "to create a short file with several lines: printf the lines and redirect (>)\n"
+      "into the file.\n"
       "  printf 'one\\ntwo\\n' > pair.txt makes a two-line file.",
       "Create shopping.txt containing three lines: eggs, milk, bread.",
       "[ \"$(cat shopping.txt 2>/dev/null)\" = \"$(printf 'eggs\\nmilk\\nbread')\" ]",
