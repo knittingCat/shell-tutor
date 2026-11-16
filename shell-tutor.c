@@ -1891,31 +1891,32 @@ static void forget(int i) {
 }
 
 /*
- * During the final review there is no limit on tries. Every lesson you miss
- * (a wrong answer, or idk) is added to one file in your home folder, in this
- * form, once per lesson however many times you miss it:
+ * During the final review there is no limit on tries, and two files in your
+ * home folder are added to as you go, in this form, once per lesson:
  *
  *   [N/43] Section - Title
  *     intended: the answer
  *
- * What you typed is not recorded, and the file is only ever added to.
+ * The answers file gets every lesson you finish (right, or idk); the
+ * cmd-reminders file gets the ones you missed (a wrong answer, or idk).
+ * What you typed is not recorded, and the files are only ever added to.
  */
 static int final_mode = 0;
-static char reminders_path[PATH_MAX];
+static char answers_path[PATH_MAX], reminders_path[PATH_MAX];
 
-static void log_reminder(int i) {
-    if (!final_mode || !reminders_path[0]) return;
+static void log_entry(const char *path, int i) {
+    if (!final_mode || !path[0]) return;
     const Lesson *l = &LESSONS[i];
     char header[256];
     snprintf(header, sizeof header, "[%d/%d] %s - %s\n", i + 1, LESSON_COUNT, l->section, l->title);
-    FILE *f = fopen(reminders_path, "r");
+    FILE *f = fopen(path, "r");
     if (f) {
         char line[512];
         while (fgets(line, sizeof line, f))
             if (strcmp(line, header) == 0) { fclose(f); return; }   /* already listed */
         fclose(f);
     }
-    f = fopen(reminders_path, "a");
+    f = fopen(path, "a");
     if (!f) return;
     fprintf(f, "\n%s", header);
     if (l->kind == QUIZ) fprintf(f, "  intended: %s) %s\n", l->check, l->answer);
@@ -1924,16 +1925,18 @@ static void log_reminder(int i) {
 }
 
 /* One typed answer: ATTEMPT_RIGHT, ATTEMPT_WRONG or ATTEMPT_TYPO (the shell could not parse it).
-   Only a wrong one counts as a miss; a typo is not one. */
+   A right one finishes the lesson; only a wrong one counts as a miss, a typo is not one. */
 enum { ATTEMPT_WRONG = 0, ATTEMPT_RIGHT = 1, ATTEMPT_TYPO = 2 };
 
 static void log_attempt(int i, const char *input, int result) {
     (void)input;
-    if (result == ATTEMPT_WRONG) log_reminder(i);
+    if (result == ATTEMPT_RIGHT) log_entry(answers_path, i);
+    else if (result == ATTEMPT_WRONG) log_entry(reminders_path, i);
 }
 
 static void log_idk(int i) {
-    log_reminder(i);
+    log_entry(answers_path, i);
+    log_entry(reminders_path, i);
 }
 
 
@@ -2221,11 +2224,13 @@ static int final_review(void) {
            BOLD, YELLOW, RESET, LESSON_COUNT);
     if (resumed)
         printf("Picking up where you left off: %d of %d already done.\n", pos, LESSON_COUNT);
-    printf("There is no limit on tries here. Anything you get wrong or answer with idk is added,\n"
-           "with the intended answer, to a cmd-reminders file in your home folder.\n");
+    printf("There is no limit on tries here. Each lesson you finish is added, with the intended answer,\n"
+           "to an answers file in your home folder, and anything you get wrong or answer with idk\n"
+           "is also added to a cmd-reminders file.\n");
 
     const char *home = getenv("HOME");
     const char *suffix = tier_progress[tier] + strlen("progress");
+    snprintf(answers_path, sizeof answers_path, "%s/shell-tutor-answers%s.txt", home ? home : ".", suffix);
     snprintf(reminders_path, sizeof reminders_path, "%s/shell-tutor-cmd-reminders%s.txt", home ? home : ".", suffix);
     final_mode = 1;
 
