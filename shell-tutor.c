@@ -1870,11 +1870,20 @@ static void list_lessons(int current) {
 enum { NEXT, QUIT, JUMP };
 static int jump_to;
 
+static void explain_failure(const Lesson *l, const char *input);
+/* In the advanced and GitHub tiers the explanation of a failed try waits until you type hint. */
+static char last_fail_input[1024];
+static int last_fail_lesson = -1;
+
 /* Handles the commands shared by both lesson kinds. Returns 1 if it consumed the input. */
 static int meta_command(const char *input, const Lesson *l, int i, int *result) {
     if (strcmp(input, "quit") == 0 || strcmp(input, "exit") == 0) { *result = QUIT; return 1; }
     if (strcmp(input, "skip") == 0 || strcmp(input, "next") == 0) { *result = NEXT; return 1; }
-    if (strcmp(input, "hint") == 0) { printf("%sHint:%s %s\n", YELLOW, RESET, l->hint); return 2; }
+    if (strcmp(input, "hint") == 0) {
+        printf("%sHint:%s %s\n", YELLOW, RESET, l->hint);
+        if (keep_files && last_fail_lesson == i && last_fail_input[0]) explain_failure(l, last_fail_input);
+        return 2;
+    }
     if (strcmp(input, "list") == 0) { list_lessons(i); return 2; }
     if (strcmp(input, "help") == 0) { print_prompt_help(l->kind); return 2; }
     if (strcmp(input, "reset") == 0) { reset_work_dir(); printf("Fresh copy of the example files.\n"); return 2; }
@@ -2051,7 +2060,11 @@ static int run_lesson(int i, int review) {
         if (keep_files) printf("%sNot done yet.%s\n", YELLOW, RESET);
         else printf("%sNot quite.%s\n", RED, RESET);
         log_attempt(i, input, output_has_syntax_error() ? ATTEMPT_TYPO : ATTEMPT_WRONG);
-        explain_failure(l, input);
+        if (keep_files) {
+            snprintf(last_fail_input, sizeof last_fail_input, "%s", input);
+            last_fail_lesson = i;
+        } else
+            explain_failure(l, input);
         if (review && !final_mode && ++tries >= (keep_files ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
             printf("One way:  %s\nBack into the lessons it goes.\n", l->answer);
             forget(i);
@@ -2393,7 +2406,7 @@ int main(int argc, char **argv) {
         }
         if (pending == 0) {
             printf("\n%sThat's all %d lessons, reviewed and all. Well done.%s\n", GREEN, LESSON_COUNT, RESET);
-            printf("Run shell-tutor%s again any time for another full review, or shell-tutor%s --reset to start from scratch.\n", tier_flag[tier], tier_flag[tier]);
+            printf("Run shell-tutor again any time for another full review, or shell-tutor%s --reset to start from scratch.\n", tier_flag[tier]);
             if (tier == TIER_BASIC) printf("Ready for more? There is a second tier: shell-tutor --advanced\n");
             if (tier == TIER_ADVANCED) printf("Ready for more? The third tier is git and GitHub: shell-tutor --github\n");
             break;
@@ -2415,6 +2428,6 @@ int main(int argc, char **argv) {
 
     int finished = 0;
     for (int k = 0; k < LESSON_COUNT; k++) finished += done[k];
-    printf("%s%d of %d lessons done. Run shell-tutor%s again to continue.%s\n", DIM, finished, LESSON_COUNT, tier_flag[tier], RESET);
+    printf("%s%d of %d lessons done. Run shell-tutor again to continue.%s\n", DIM, finished, LESSON_COUNT, RESET);
     return 0;
 }
