@@ -748,7 +748,8 @@ static const Lesson ADVANCED[] = {
       "  \"double quotes\" still expand variables: \"hello $USER\" contains your name.\n"
       "  'single quotes' take every character literally: 'hello $USER' has a $.\n"
       "Use double quotes around anything with a variable in it, single quotes when\n"
-      "you want the text untouched (printf formats, sed and grep patterns).",
+      "you want the text exactly as typed, like the printf and grep text you have\n"
+      "already used.",
       "Set a variable city to Paris, then print exactly: I live in Paris, using the variable inside quotes.",
       "grep -qx 'I live in Paris' \"$OUT\" && [[ \"$CMD\" == *'$city'* || \"$CMD\" == *'${city}'* ]]",
       "city=Paris; echo \"...$city\"",
