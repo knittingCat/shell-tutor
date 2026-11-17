@@ -764,8 +764,11 @@ static const Lesson ADVANCED[] = {
       "     the file (the shebang);\n"
       "  2. execute permission: chmod +x FILE;\n"
       "  3. running it as ./FILE (or from anywhere by its path).\n"
-      "Without step 2 you can still run it as sh FILE. Write the file with a\n"
-      "here-document. Inside, $(command) works as it does at the prompt.",
+      "Without step 2 you can still run it as sh FILE.\n"
+      "Write the file with a here-document: type cat > FILE <<'EOF', then the lines\n"
+      "of the file (the prompt shows > while it waits), then EOF alone on a line.\n"
+      "Everything between is written into FILE. Inside, $(command) works as it\n"
+      "does at the prompt.",
       "Write today.sh, which prints: Today is, followed by the output of date, on one line. Make it executable and run it.",
       "[ -x today.sh ] && head -1 today.sh | grep -q '^#!' && grep -q '^Today is .*20[0-9][0-9]' \"$OUT\"",
       "cat > today.sh <<'EOF' with #!/bin/sh and echo \"Today is $(date)\", then chmod +x today.sh; ./today.sh",
@@ -2341,9 +2344,7 @@ int main(int argc, char **argv) {
     } else if (!any_done && tier == TIER_ADVANCED) {
         printf("\nThe second tier. It assumes the first course: paths, pipes, redirection, grep,\n"
                "variables, wildcards. Two things are new at this prompt. A line ending in \\\n"
-               "continues on the next line, and a here-document (cat > file <<'EOF') keeps\n"
-               "reading until you type EOF alone on a line; that is how you will write scripts.\n"
-               "Files you make stay put between tries within a lesson (type reset for fresh ones),\n"
+               "continues on the next line, and files you make stay put between tries within a lesson (type reset for fresh ones),\n"
                "so you can write a script with one command and run it with the next.\n");
     } else if (!any_done) {
         printf("\nNew here? The shell is the program behind this window: you type a command,\n"
