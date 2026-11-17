@@ -2346,9 +2346,13 @@ int main(int argc, char **argv) {
                "fresh ones.\n");
     } else if (!any_done && tier == TIER_ADVANCED) {
         printf("\nThe second tier. It assumes the first course: paths, pipes, redirection, grep,\n"
-               "variables, wildcards. Two things are new at this prompt. A line ending in \\\n"
-               "continues on the next line, and files you make stay put between tries within a lesson (type reset for fresh ones),\n"
-               "so you can write a script with one command and run it with the next.\n");
+               "variables, wildcards. Two things are new at this prompt.\n"
+               "1. A command can go on after you press Enter. If a line ends in \\ or is\n"
+               "   not finished yet, the prompt changes to > and waits: keep typing, and\n"
+               "   it runs once the command is complete.\n"
+               "2. Files you make stay put between tries within a lesson (type reset for\n"
+               "   fresh ones), so you can write a script with one command and run it\n"
+               "   with the next.\n");
     } else if (!any_done) {
         printf("\nNew here? The shell is the program behind this window: you type a command,\n"
                "press Enter, and it runs it and shows the result. A command is a program's name,\n"
