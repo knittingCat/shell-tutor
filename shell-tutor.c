@@ -2048,7 +2048,8 @@ static int run_lesson(int i, int review) {
             save_progress();
             return NEXT;
         }
-        printf("%sNot done yet.%s\n", YELLOW, RESET);
+        if (keep_files) printf("%sNot done yet.%s\n", YELLOW, RESET);
+        else printf("%sNot quite.%s\n", RED, RESET);
         log_attempt(i, input, output_has_syntax_error() ? ATTEMPT_TYPO : ATTEMPT_WRONG);
         explain_failure(l, input);
         if (review && !final_mode && ++tries >= (keep_files ? REVIEW_TRIES_ADVANCED : REVIEW_TRIES)) {
