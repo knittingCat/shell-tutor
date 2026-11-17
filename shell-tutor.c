@@ -2242,7 +2242,8 @@ static int final_review(void) {
 static void usage(void) {
     puts("shell-tutor - learn the Unix shell by doing\n"
          "\n"
-         "  shell-tutor - continue from the first unfinished lesson\n"
+         "  shell-tutor - continue from the first unfinished lesson, in the tier you used last\n"
+         "  shell-tutor --basic - go back to the first course\n"
          "  shell-tutor N - start at lesson N\n"
          "  shell-tutor --list - show the lessons and your progress\n"
          "  shell-tutor --reset - forget your progress\n"
@@ -2256,16 +2257,31 @@ static void usage(void) {
 
 int main(int argc, char **argv) {
     use_color = isatty(STDOUT_FILENO) && !getenv("NO_COLOR");
-    if (argc > 1 && strcmp(argv[1], "--advanced") == 0) {
+    /* A bare "shell-tutor" goes back to the tier you used last. */
+    const char *tier_arg = argc > 1 ? argv[1] : NULL;
+    char remembered[32] = "";
+    if (argc == 1) {
+        const char *home = getenv("HOME");
+        char path[PATH_MAX];
+        snprintf(path, sizeof path, "%s/.shell-tutor/last-tier", home ? home : ".");
+        FILE *f = fopen(path, "r");
+        if (f) {
+            if (fgets(remembered, sizeof remembered, f)) remembered[strcspn(remembered, "\n")] = 0;
+            fclose(f);
+            if (strcmp(remembered, "--advanced") == 0 || strcmp(remembered, "--github") == 0) tier_arg = remembered;
+        }
+    }
+    if (tier_arg && strcmp(tier_arg, "--basic") == 0) { argc--; argv++; tier_arg = NULL; }
+    if (tier_arg && strcmp(tier_arg, "--advanced") == 0) {
         tier = TIER_ADVANCED;
         LESSONS = ADVANCED;
         LESSON_COUNT = (int)(sizeof ADVANCED / sizeof ADVANCED[0]);
-        argc--; argv++;
-    } else if (argc > 1 && strcmp(argv[1], "--github") == 0) {
+        if (argc > 1) { argc--; argv++; }
+    } else if (tier_arg && strcmp(tier_arg, "--github") == 0) {
         tier = TIER_GITHUB;
         LESSONS = GITHUB;
         LESSON_COUNT = (int)(sizeof GITHUB / sizeof GITHUB[0]);
-        argc--; argv++;
+        if (argc > 1) { argc--; argv++; }
         /* Commits in the scratch repositories need an identity, and nothing here may open an editor. */
         setenv("GIT_CONFIG_COUNT", "6", 1);
         setenv("GIT_CONFIG_KEY_0", "user.name", 1);          setenv("GIT_CONFIG_VALUE_0", "Shell Tutor", 1);
@@ -2293,6 +2309,16 @@ int main(int argc, char **argv) {
     if (start < 0) {
         for (int i = 0; i < LESSON_COUNT; i++) if (!done[i]) { start = i; break; }
         if (start < 0) start = LESSON_COUNT;   /* everything done: straight to the final review */
+    }
+
+    {
+        const char *home = getenv("HOME");
+        char dir[PATH_MAX], path[PATH_MAX];
+        snprintf(dir, sizeof dir, "%s/.shell-tutor", home ? home : ".");
+        mkdir(dir, 0700);
+        snprintf(path, sizeof path, "%s/last-tier", dir);
+        FILE *f = fopen(path, "w");
+        if (f) { fputs(tier == TIER_ADVANCED ? "--advanced\n" : tier == TIER_GITHUB ? "--github\n" : "--basic\n", f); fclose(f); }
     }
 
     srand((unsigned)time(NULL) ^ (unsigned)getpid());

@@ -26,7 +26,8 @@ Then run `shell-tutor` from anywhere.
 ## Use
 
 ```
-shell-tutor          continue from the first unfinished lesson
+shell-tutor          continue from the first unfinished lesson, in the tier you used last
+shell-tutor --basic  go back to the first course (after using --advanced or --github)
 shell-tutor 13       start at lesson 13
 shell-tutor --list   show the lessons and your progress
 shell-tutor --reset  forget your progress
