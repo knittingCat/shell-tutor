@@ -2221,7 +2221,7 @@ static int final_review(void) {
     }
     printf("\n%s%sFinal review%s — all %d lessons, mixed up, no explanations.\n",
            BOLD, YELLOW, RESET, LESSON_COUNT);
-    if (resumed)
+    if (resumed && pos > 0)
         printf("Picking up where you left off: %d of %d already done.\n", pos, LESSON_COUNT);
     printf("There is no limit on tries here. Each lesson you finish is added, with the intended answer,\n"
            "to an answers file in your home folder, and anything you answer with idk is also\n"
