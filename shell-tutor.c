@@ -769,7 +769,9 @@ static const Lesson ADVANCED[] = {
       "of the file (the prompt shows > while it waits), then EOF alone on a line.\n"
       "Everything between is written into FILE. Inside, $(command) works as it\n"
       "does at the prompt: the command date prints the current date and time, so\n"
-      "echo \"It is $(date)\" prints a line like: It is Tue Nov 17 09:20:01 PST 2026",
+      "echo \"It is $(date)\" prints a line like: It is Tue Nov 17 09:20:01 PST 2026\n"
+      "The here-document ends at EOF, so do the rest at the next prompt: the file\n"
+      "is still there, and chmod +x FILE; ./FILE makes it executable and runs it.",
       "Write today.sh, which prints: Today is, followed by the output of date, on one line. Make it executable and run it.",
       "[ -x today.sh ] && head -1 today.sh | grep -q '^#!' && grep -q '^Today is .*20[0-9][0-9]' \"$OUT\"",
       "cat > today.sh <<'EOF' with #!/bin/sh and echo \"Today is $(date)\", then chmod +x today.sh; ./today.sh",
